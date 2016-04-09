@@ -1,5 +1,3 @@
-include ../../../xia.mk
-
 CC = g++
 
 # special directories
@@ -25,11 +23,11 @@ CFLAGS += -g
 endif
 
 # search for libs here
-LDFLAGS += -L../lib/libbloom/build -Llib/uthash
+LDFLAGS += -Llib/libbloom/build -Llib/uthash
 # add these libs for linking
 LIB += -lbloom $(LIBS)
 # special include dirs to add
-INC += -Iinclude -I../lib/libbloom -Ilib/uthash/src
+INC += -Iinclude -Ilib/libbloom -Ilib/uthash/src
 
 all: $(TARGET)
 	mkdir -p $(BINDIR)
