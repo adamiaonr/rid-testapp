@@ -8,7 +8,7 @@ BINDIR = bin
 # target: rid_fwd
 TARGET = rid_fwd
 # common source files
-COMMON = lookup_stats lsht pt rid_utils
+COMMON = lookup_stats pt rid_utils
 
 # other helpful variables
 SRCEXT = c
@@ -17,9 +17,9 @@ OBJECTS = $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
 # debuggin' options
 ifdef DEBUG
-CFLAGS += -g
-#else
-#CFLAGS +=-O2
+CFLAGS += -g -ggdb
+else
+CFLAGS +=-O2
 endif
 
 # search for libs here

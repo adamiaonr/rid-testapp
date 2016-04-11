@@ -14,7 +14,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,191 +25,252 @@
 #include "rid_utils.h"
 
 char * extract_prefix_bytes(
-		char ** to,
-		struct click_xia_xid * rid,
-		int trailing_bit) {
+        char ** to,
+        struct click_xia_xid * rid,
+        int trailing_bit) {
 
-	// get the index of the byte which contains the key_bit
-	int byte_index = (CLICK_XIA_XID_ID_LEN - (trailing_bit / 8) - 1), i;
+    // get the index of the byte which contains the key_bit
+    int byte_index = (CLICK_XIA_XID_ID_LEN - (trailing_bit / 8) - 1), i;
 
-	// aux char * which keeps a string representation of a byte
-	char byte_str[3] = {0};
+    // aux char * which keeps a string representation of a byte
+    char byte_str[3] = {0};
 
-	for (i = (CLICK_XIA_XID_ID_LEN - 1); i >= byte_index; i--) {
+    for (i = (CLICK_XIA_XID_ID_LEN - 1); i >= byte_index; i--) {
 
-		sprintf(byte_str, "%02X", rid->id[i]);
-		strncat(*to, byte_str, 2);
+        sprintf(byte_str, "%02X", rid->id[i]);
+        strncat(*to, byte_str, 2);
 
-		memset(byte_str, 0, strlen(byte_str));
-	}
+        memset(byte_str, 0, strlen(byte_str));
+    }
 
-	return *to;
+    return *to;
 }
 
 int name_to_rid(struct click_xia_xid ** rid, char * _prefix) {
 
-	// transform an URL-like prefix into a Bloom Filter (BF) of size
-	// m = 160 bit
-	struct bloom bloom_filter;
-	bloom_init(&bloom_filter);
+    // transform an URL-like prefix into a Bloom Filter (BF) of size
+    // m = 160 bit
+    struct bloom bloom_filter;
+    bloom_init(&bloom_filter);
 
-	// by default, we consider all possible prefix lengths
-	// TODO: implement a non-default behavior (e.g. argument specifying the
-	// prefix lengths to encode)
+    // by default, we consider all possible prefix lengths
+    // TODO: implement a non-default behavior (e.g. argument specifying the
+    // prefix lengths to encode)
 
-	// do this in order not to destroy _prefix in strtok()
-	char * prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
-	strncpy(prefix, _prefix, strlen(_prefix));
+    // do this in order not to destroy _prefix in strtok()
+    char * prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
+    strncpy(prefix, _prefix, strlen(_prefix));
 
-	// to sequentially build the subprefixes
-	char * sub_prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
-	int sub_prefix_count = 0;
+    // to sequentially build the subprefixes
+    char * sub_prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
+    int sub_prefix_count = 0;
 
-	size_t sub_prefix_len = 0;
-	size_t prefix_len = strlen(prefix);
+    size_t sub_prefix_len = 0;
+    size_t prefix_len = strlen(prefix);
 
-	// extract the first subprefix (i.e. from start of prefix till the first
-	// occurrence of '/')
-	char * token = strtok(prefix, PREFIX_DELIM);
+    // extract the first subprefix (i.e. from start of prefix till the first
+    // occurrence of '/')
+    char * token = strtok(prefix, PREFIX_DELIM);
 
-	while (token != NULL && (sub_prefix_count <= PREFIX_MAX_COUNT)) {
+    while (token != NULL && (sub_prefix_count <= PREFIX_MAX_COUNT)) {
 
-		//printf("name_to_rid(): strncatin' token %s\n", token);
+        //printf("name_to_rid(): strncatin' token %s\n", token);
 
-		// concatenate the next token between '/' to the current subprefix
-		sub_prefix = strncat(
-				sub_prefix,
-				(const char *) token,
-				(PREFIX_MAX_LENGTH - strlen(sub_prefix) - 1));
+        // concatenate the next token between '/' to the current subprefix
+        sub_prefix = strncat(
+                sub_prefix,
+                (const char *) token,
+                (PREFIX_MAX_LENGTH - strlen(sub_prefix) - 1));
 
-		sub_prefix_len = strlen(sub_prefix);
+        sub_prefix_len = strlen(sub_prefix);
 
-		// add the current subprefix to the BF
-		//printf("name_to_rid(): adding prefix %s, size %d\n", sub_prefix, (int) sub_prefix_len);
-		bloom_add(&bloom_filter, sub_prefix, sub_prefix_len);
+        // add the current subprefix to the BF
+        //printf("name_to_rid(): adding prefix %s, size %d\n", sub_prefix, (int) sub_prefix_len);
+        bloom_add(&bloom_filter, sub_prefix, sub_prefix_len);
 
-		// TODO: shall we include '/' for the BF encoding part?
-		// check if this is the final token
-		if (sub_prefix_len < prefix_len) {
+        // TODO: shall we include '/' for the BF encoding part?
+        // check if this is the final token
+        if (sub_prefix_len < prefix_len) {
 
-			sub_prefix = strncat(
-					sub_prefix,
-					PREFIX_DELIM,
-					(PREFIX_MAX_LENGTH - sub_prefix_len - 1));
+            sub_prefix = strncat(
+                    sub_prefix,
+                    PREFIX_DELIM,
+                    (PREFIX_MAX_LENGTH - sub_prefix_len - 1));
 
-			sub_prefix_len++;
-		}
+            sub_prefix_len++;
+        }
 
-		sub_prefix_count++;
+        sub_prefix_count++;
 
-		// capture the new token
-		token = strtok(NULL, PREFIX_DELIM);
-	}
+        // capture the new token
+        token = strtok(NULL, PREFIX_DELIM);
+    }
 
-	(*rid)->type = CLICK_XIA_XID_TYPE_RID;
+    (*rid)->type = CLICK_XIA_XID_TYPE_RID;
 
-	// XXX: no risk of 'loosing' stuff here, note that we're copying char from
-	// bloom_filter (which will later be deleted via free() anyway)
-	int i = 0;
+    // XXX: no risk of 'loosing' stuff here, note that we're copying char from
+    // bloom_filter (which will later be deleted via free() anyway)
+    int i = 0;
 
-	for (i = 0; i < CLICK_XIA_XID_ID_LEN; i++) {
+    for (i = 0; i < CLICK_XIA_XID_ID_LEN; i++) {
 
-		(*rid)->id[i] = (uint8_t) bloom_filter.bf[i];
-	}
+        (*rid)->id[i] = (uint8_t) bloom_filter.bf[i];
+    }
 
-	// free string memory
-	free(prefix);
-	free(sub_prefix);
+    // free string memory
+    free(prefix);
+    free(sub_prefix);
 
-	// print and free BF memory
-	//bloom_print(bloom_filter);
-	bloom_free(&bloom_filter);
+    // print and free BF memory
+    //bloom_print(bloom_filter);
+    bloom_free(&bloom_filter);
 
-	return sub_prefix_count;
+    return sub_prefix_count;
 }
 
 int rid_compare(struct click_xia_xid * a, struct click_xia_xid * b) {
 
-	int res = 1, j;
+    int res = 1, j;
 
-	for (j = 0; j < CLICK_XIA_XID_ID_LEN; j++) {
+    for (j = 0; j < CLICK_XIA_XID_ID_LEN; j++) {
 
-		if (a->id[j] != b->id[j]) {
+        if (a->id[j] != b->id[j]) {
 
-			res = 0;
+            res = 0;
 
-			// off (of the cycle) you go...
-			break;
-		}
-	}
+            // off (of the cycle) you go...
+            break;
+        }
+    }
 
-	return res;
+    return res;
 }
 
 int rid_match(struct click_xia_xid * req, struct click_xia_xid * fwd) {
 
-	int res = 1, j;
+    int res = 1, j;
 
-	for (j = 0; j < CLICK_XIA_XID_ID_LEN; j++) {
+    for (j = 0; j < CLICK_XIA_XID_ID_LEN; j++) {
 
-		if ((req->id[j] & fwd->id[j]) != fwd->id[j]) {
+        if ((req->id[j] & fwd->id[j]) != fwd->id[j]) {
 
-			res = 0;
+            res = 0;
 
-			// off (of the cycle) you go...
-			break;
-		}
-	}
+            // off (of the cycle) you go...
+            break;
+        }
+    }
 
-	return res;
+    return res;
 }
 
 int rid_match_mask(
-		struct click_xia_xid * req,
-		struct click_xia_xid * fwd,
-		int trailing_bit) {
+        struct click_xia_xid * req,
+        struct click_xia_xid * fwd,
+        int trailing_bit) {
 
-	// FIXME: it seems inefficient (in terms of memory and speed) to be
-	// allocating memory for a mask every time we run this function...
-	uint8_t mask[CLICK_XIA_XID_ID_LEN] = {0};
+    // FIXME: it seems inefficient (in terms of memory and speed) to be
+    // allocating memory for a mask every time we run this function...
+    uint8_t mask[CLICK_XIA_XID_ID_LEN] = {0};
 
-	// find on which byte of the RID is the `key bit': let's call it `key byte'
-	int key_byte = (CLICK_XIA_XID_ID_LEN - (trailing_bit / 8) - 1), i;
+    // find on which byte of the RID is the `key bit': let's call it `key byte'
+    int key_byte = (CLICK_XIA_XID_ID_LEN - (trailing_bit / 8) - 1), i;
 
-	// in the `key byte', set the bits to the left of the `key bit' to '1',
-	// leaving others at '0'
-	mask[key_byte] = (~(~0 << ((trailing_bit + 1) % 8)) << (8 - ((trailing_bit + 1) % 8)));
+    // in the `key byte', set the bits to the left of the `key bit' to '1',
+    // leaving others at '0'
+    mask[key_byte] = (~(~0 << ((trailing_bit + 1) % 8)) << (8 - ((trailing_bit + 1) % 8)));
 
-	// set all bits of the bytes of mask with index larger than byte_index to
-	// '1'
-	for (i = (key_byte + 1); i < CLICK_XIA_XID_ID_LEN; i++)
-		mask[i] = 0xFF;
+    // set all bits of the bytes of mask with index larger than byte_index to
+    // '1'
+    for (i = (key_byte + 1); i < CLICK_XIA_XID_ID_LEN; i++)
+        mask[i] = 0xFF;
 
-	int res = 1, j;
+    int res = 1, j;
 
-	for (j = 0; j < CLICK_XIA_XID_ID_LEN; j++) {
+    for (j = 0; j < CLICK_XIA_XID_ID_LEN; j++) {
 
-		if (((req->id[j] & mask[j]) & (fwd->id[j] & mask[j])) != (fwd->id[j] & mask[j])) {
+        if (((req->id[j] & mask[j]) & (fwd->id[j] & mask[j])) != (fwd->id[j] & mask[j])) {
 
-			res = 0;
+            res = 0;
 
-			// off (of the cycle) you go...
-			break;
-		}
-	}
+            // off (of the cycle) you go...
+            break;
+        }
+    }
 
-	return res;
+    return res;
 }
 
 int rid_hamming_weight(struct click_xia_xid * rid) {
 
-	int rid_hamming_weight = 0, i = 0;
+    int rid_hamming_weight = 0, i = 0;
 
-	// FIXME: to make things easy, here we use GNU compiler's built-in
-	// population count function. we could also use some 'cool' algorithms
-	// such as that found on p. 66 of 'Hacker's Delight' (http://bit.ly/1gfDYpe)
-	for (i = 0; i < CLICK_XIA_XID_ID_LEN; i++)
-		rid_hamming_weight += __builtin_popcount(rid->id[i]);
+    // FIXME: to make things easy, here we use GNU compiler's built-in
+    // population count function. we could also use some 'cool' algorithms
+    // such as that found on p. 66 of 'Hacker's Delight' (http://bit.ly/1gfDYpe)
+    for (i = 0; i < CLICK_XIA_XID_ID_LEN; i++)
+        rid_hamming_weight += __builtin_popcount(rid->id[i]);
 
-	return rid_hamming_weight;
+    return rid_hamming_weight;
+}
+
+unsigned int req_entry_diff(
+    char * request, 
+    char * entry, 
+    unsigned int entry_size) {
+
+    // at worst, |F\R| = |F|
+    unsigned int req_entry_diff = entry_size;
+    unsigned int prefix_count = 0;
+
+    // do this in order not to destroy request and entry in strtok()
+    char _request[PREFIX_MAX_LENGTH];
+    char * _request_ptr;
+    strncpy(_request, request, PREFIX_MAX_LENGTH);
+
+    char _entry[PREFIX_MAX_LENGTH];
+    char * _entry_ptr;
+    strncpy(_entry, entry, PREFIX_MAX_LENGTH);
+
+    // extract the first subprefix (i.e. from start of prefix till the first
+    // occurrence of '/')
+    char * _request_token = strtok_r(_request, PREFIX_DELIM, &_request_ptr);
+    char * _entry_token = strtok_r(_entry, PREFIX_DELIM, &_entry_ptr);
+
+    while (_entry_token != NULL && (prefix_count <= entry_size)) {
+
+        if (strcmp(_request_token, _entry_token) != 0) {
+
+            // if (req_entry_diff > 1) {
+            //     printf("req_entry_diff(): |F\\R| %d"\
+            //         "\n\t[ REQUEST ] : %s"\
+            //         "\n\t[ ENTRY | |F| ] : %s | %d\n", 
+            //         req_entry_diff, 
+            //         request, 
+            //         entry, entry_size);
+            // }
+
+            return req_entry_diff;
+
+        } else {
+
+            req_entry_diff--;
+        }
+
+        _request_token = strtok_r(NULL, PREFIX_DELIM, &_request_ptr);
+        _entry_token = strtok_r(NULL, PREFIX_DELIM, &_entry_ptr);
+
+        prefix_count++;
+    }
+
+    // if (req_entry_diff > 1) {
+    //     printf("req_entry_diff(): |F\\R| %d"\
+    //         "\n\t[ REQUEST ] : %s"\
+    //         "\n\t[ ENTRY | |F| ] : %s | %d\n", 
+    //         req_entry_diff, 
+    //         request, 
+    //         entry, entry_size);
+    // }
+
+    return req_entry_diff;
 }

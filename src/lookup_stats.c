@@ -14,7 +14,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * 		http://www.apache.org/licenses/LICENSE-2.0
+ *         http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,64 +26,99 @@
 
 void lookup_stats_print(struct lookup_stats * stats) {
 
-	printf(
-			"\n--------------------------------------------------------------------------\n"\
-			"%-12s\t| %-12s\t| %-12s\t| %-12s\t| %-12s\n"\
-			"--------------------------------------------------------------------------\n"\
-			"%-12ld\t| %-12ld\t| %-12ld\t| %-12ld\t| %-.6f\n",
-			"TPs", "FPs", "TNs", "TOTAL", "FP RATE",
-			stats->tps,
-			stats->fps,
-			stats->tns,
-			stats->total_matches,
-			((double) stats->fps / ((double) stats->tps + (double) stats->fps)));
+    printf(
+            "\n--------------------------------------------------------------------------\n"\
+            "%-12s\t| %-12s\t| %-12s\t| %-12s\t| %-12s\n"\
+            "--------------------------------------------------------------------------\n"\
+            "%-12ld\t| %-12ld\t| %-12ld\t| %-12ld\t| %-.6f\n",
+            "TPs", "FPs", "TNs", "TOTAL", "FP RATE",
+            stats->tps,
+            stats->fps,
+            stats->tns,
+            stats->total_matches,
+            ((double) stats->fps / ((double) stats->tps + (double) stats->fps)));
 
-	printf("\n");
+    printf("\n");
 }
 
 void lookup_stats_init(
-		struct lookup_stats ** stats,
-		char * prefix,
-		int prefix_size) {
+        struct lookup_stats ** stats,
+        char * prefix,
+        int prefix_size) {
 
-	// FIXME: to make things more efficient in terms of space, we assume the
-	// existence of a char array, previously allocated somewhere in the heap.
-	// why? this avoids the double allocation of a char * for entries of type
-	// lsht_fwd and pt_fwd (both will point to the same heap location).
-	(*stats)->prefix = prefix;
-	(*stats)->prefix_size = prefix_size;
+    // FIXME: to make things more efficient in terms of space, we assume the
+    // existence of a char array, previously allocated somewhere in the heap.
+    // why? this avoids the double allocation of a char * for entries of type
+    // lsht_fwd and pt_fwd (both will point to the same heap location).
+    (*stats)->prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
+    strncpy((*stats)->prefix, prefix, PREFIX_MAX_LENGTH);
+    // (*stats)->prefix = prefix;
+    (*stats)->prefix_size = prefix_size;
 
-	// everything else is initialized to 0
-	(*stats)->tps = 0;
-	(*stats)->fps = 0;
-	(*stats)->tns = 0;
-	(*stats)->total_matches = 0;
+    (*stats)->req_entry_diff_hits = (unsigned long *) calloc(prefix_size + 1, sizeof(unsigned long));
+
+    // everything else is initialized to 0
+    (*stats)->tps = 0;
+    (*stats)->fps = 0;
+    (*stats)->tns = 0;
+    (*stats)->total_matches = 0;
+}
+
+void lookup_stats_erase(struct lookup_stats ** stats) {
+
+    // erase the prefix string and |F\R| array
+    free((*stats)->prefix);
+    free((*stats)->req_entry_diff_hits);
+
+    // printf("lookup_stats_erase():"\ 
+    //     "\n\t[PREFIX] : %s", 
+    //     (*stats)->prefix);
+
+    // int i = 0;
+    // for (i; i < (*stats)->prefix_size; i++)
+    //     printf("\n\t|F\\R|[%d] : %d", 
+    //         i, (*stats)->req_entry_diff_hits[i]);
+
+    // printf("\n");   
 }
 
 void lookup_stats_update(
-		struct lookup_stats ** stats,
-		unsigned long tps,
-		unsigned long fps,
-		unsigned long tns,
-		unsigned long total_matches) {
+        struct lookup_stats ** stats,
+        unsigned int req_entry_diff,
+        unsigned long tps,
+        unsigned long fps,
+        unsigned long tns,
+        unsigned long total_matches) {
 
-	(*stats)->tps += tps;
-	(*stats)->fps += fps;
-	(*stats)->tns += tns;
-	(*stats)->total_matches += total_matches;
+    // only update when a false positive triggers lookup_stats_update()
+    if (fps > 0) {
+
+        (*stats)->req_entry_diff_hits[req_entry_diff] += fps; 
+
+        // printf("lookup_stats_update():"\ 
+        //     "\n\t[PREFIX] : %s"\
+        //     "\n\t|F\\R|[%d] = %d\n", 
+        //     (*stats)->prefix,
+        //     req_entry_diff, (*stats)->req_entry_diff_hits[req_entry_diff]);
+    }
+
+    (*stats)->tps += tps;
+    (*stats)->fps += fps;
+    (*stats)->tns += tns;
+    (*stats)->total_matches += total_matches;
 }
 
 struct lookup_stats * lookup_stats_add(
-		struct lookup_stats ** ht,
-		struct lookup_stats * node) {
+        struct lookup_stats ** ht,
+        struct lookup_stats * node) {
 
-	struct lookup_stats * s;
+    struct lookup_stats * s;
 
-	HASH_FIND_STR(*ht, node->prefix, s);
+    HASH_FIND_STR(*ht, node->prefix, s);
 
-	if (s == NULL) {
-		HASH_ADD_KEYPTR(hh, *ht, node->prefix, strlen(node->prefix), node);
-	}
+    if (s == NULL) {
+        HASH_ADD_KEYPTR(hh, *ht, node->prefix, strlen(node->prefix), node);
+    }
 
-	return (*ht);
+    return (*ht);
 }
