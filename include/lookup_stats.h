@@ -39,7 +39,8 @@ struct lookup_stats {
     int prefix_size;
 
     // matches per |F\R| value
-    unsigned long * req_entry_diff_hits;
+    unsigned long * req_entry_diffs_fps;
+    unsigned long * req_entry_diffs;
 
     // the actual statistics: (TPs, FPs, TNs, total number of matches)
     unsigned long tps;

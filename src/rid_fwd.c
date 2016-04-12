@@ -70,11 +70,18 @@ static __inline int rand_int(int min, int max) {
     return min + rand() / (RAND_MAX / (max - min + 1) + 1);
 }
 
-void generate_request_name(char ** request_name, char * request_prefix) {
+int generate_request_name(char ** request_name, char * request_prefix, int request_size) {
 
-    int suffixes_num = rand_int(1, SUFFIXES_SIZE);
+//    int suffixes_num = rand_int(1, SUFFIXES_SIZE);
+    int suffixes_num = request_size - count_prefixes(request_prefix);
+
+    if (suffixes_num < 0)
+        return -1;
 
     strncpy(*request_name, request_prefix, PREFIX_MAX_LENGTH);
+
+    if (suffixes_num == 0)
+        printf("generate_request_name() : already at |R| = %d : %s\n", request_size, *request_name);
 
     int request_name_lenght = strlen(*request_name);
 
@@ -82,6 +89,8 @@ void generate_request_name(char ** request_name, char * request_prefix) {
 
         strncat(*request_name, SUFFIXES[rand_int(0, SUFFIXES_SIZE - 1)], (PREFIX_MAX_LENGTH - request_name_lenght));
     }
+
+    return 0;
 }
 
 void print_namespace_stats(int * url_sizes, int max_prefix_size) {
@@ -203,7 +212,7 @@ int main(int argc, char **argv) {
 
     uint32_t prefix_count = 0;
 
-    while (fgets(prefix, PREFIX_MAX_LENGTH, fr) != NULL) {
+    while (fgets(prefix, PREFIX_MAX_LENGTH, fr) != NULL && prefix_count < 100000) {
 
         // A.3.2) remove any trailing newline ('\n') character
         if ((newline_pos = strchr(prefix, '\n')) != NULL)
@@ -306,7 +315,7 @@ int main(int argc, char **argv) {
     max_time = 0.0, min_time = DBL_MAX, avg_time = 0.0, tot_time = 0.0;
 
     // B.3) start reading the URLs in the test data file
-    while (fgets(request_prefix, PREFIX_MAX_LENGTH, fr) != NULL && (request_cnt < 10)) {
+    while (fgets(request_prefix, PREFIX_MAX_LENGTH, fr) != NULL && (request_cnt < 1000)) {
 
         // B.3.1) remove any trailing newline ('\n') character
         if ((newline_pos = strchr(request_prefix, '\n')) != NULL)
@@ -318,7 +327,8 @@ int main(int argc, char **argv) {
 
         // B.3.1) generate some random name out of the request prefix by adding
         // a random number of elements to it
-        generate_request_name(&request_name, request_prefix);
+        if (generate_request_name(&request_name, request_prefix, BF_MAX_ELEMENTS) < 0)
+            continue;
 
         // B.3.2) generate RIDs out of the request names
         request_size = name_to_rid(&request_rid, request_name);
@@ -330,7 +340,7 @@ int main(int argc, char **argv) {
 
         // B.3.3) pass the request RID through the FIBs, gather the
         // lookup stats
-        //printf("[rid fwd simulation]: lookup for %s started\n", request_name);
+        // printf("[rid fwd simulation]: lookup for %s started\n", request_name);
         request_cnt++;
 
         begin = clock();
@@ -345,6 +355,9 @@ int main(int argc, char **argv) {
             min_time = cur_time;
         else if (max_time < cur_time)
             max_time = cur_time;
+
+        memset(request_name, 0, PREFIX_MAX_LENGTH);
+        memset(request_prefix, 0, PREFIX_MAX_LENGTH);
     }
 
     printf("[rid fwd simulation]: done. looked up %ld requests: "\

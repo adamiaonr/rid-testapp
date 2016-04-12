@@ -51,6 +51,7 @@ struct click_xia_xid {
 
 extern char * extract_prefix_bytes(char ** to, struct click_xia_xid * rid, int trailing_bit);
 extern unsigned int req_entry_diff(char * request, char * entry, unsigned int entry_size);
+extern int count_prefixes(char * prefix);
 extern int name_to_rid(struct click_xia_xid ** rid, char * _prefix);
 extern int rid_compare(struct click_xia_xid * a, struct click_xia_xid * b);
 extern int rid_match(struct click_xia_xid * req, struct click_xia_xid * fwd);

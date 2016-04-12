@@ -72,7 +72,7 @@ int name_to_rid(struct click_xia_xid ** rid, char * _prefix) {
     // occurrence of '/')
     char * token = strtok(prefix, PREFIX_DELIM);
 
-    while (token != NULL && (sub_prefix_count <= PREFIX_MAX_COUNT)) {
+    while (token != NULL && (sub_prefix_count < BF_MAX_ELEMENTS)) {
 
         //printf("name_to_rid(): strncatin' token %s\n", token);
 
@@ -273,4 +273,22 @@ unsigned int req_entry_diff(
     // }
 
     return req_entry_diff;
+}
+
+int count_prefixes(char * prefix) {
+
+    int prefix_count = 0;
+
+    char _prefix[PREFIX_MAX_LENGTH];
+    strncpy(_prefix, prefix, PREFIX_MAX_LENGTH); 
+
+    char * _token = strtok(_prefix, PREFIX_DELIM);
+
+    while (_token != NULL) {
+
+        prefix_count++;
+        _token = strtok(NULL, PREFIX_DELIM);
+    }
+
+    return prefix_count;
 }

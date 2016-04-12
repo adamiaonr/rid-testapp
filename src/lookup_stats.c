@@ -55,7 +55,8 @@ void lookup_stats_init(
     // (*stats)->prefix = prefix;
     (*stats)->prefix_size = prefix_size;
 
-    (*stats)->req_entry_diff_hits = (unsigned long *) calloc(prefix_size + 1, sizeof(unsigned long));
+    (*stats)->req_entry_diffs_fps = (unsigned long *) calloc(prefix_size + 1, sizeof(unsigned long));
+    (*stats)->req_entry_diffs = (unsigned long *) calloc(prefix_size + 1, sizeof(unsigned long));
 
     // everything else is initialized to 0
     (*stats)->tps = 0;
@@ -68,7 +69,8 @@ void lookup_stats_erase(struct lookup_stats ** stats) {
 
     // erase the prefix string and |F\R| array
     free((*stats)->prefix);
-    free((*stats)->req_entry_diff_hits);
+    free((*stats)->req_entry_diffs_fps);
+    free((*stats)->req_entry_diffs);
 
     // printf("lookup_stats_erase():"\ 
     //     "\n\t[PREFIX] : %s", 
@@ -77,7 +79,7 @@ void lookup_stats_erase(struct lookup_stats ** stats) {
     // int i = 0;
     // for (i; i < (*stats)->prefix_size; i++)
     //     printf("\n\t|F\\R|[%d] : %d", 
-    //         i, (*stats)->req_entry_diff_hits[i]);
+    //         i, (*stats)->req_entry_diffs_fps[i]);
 
     // printf("\n");   
 }
@@ -93,14 +95,19 @@ void lookup_stats_update(
     // only update when a false positive triggers lookup_stats_update()
     if (fps > 0) {
 
-        (*stats)->req_entry_diff_hits[req_entry_diff] += fps; 
+        (*stats)->req_entry_diffs_fps[req_entry_diff] += fps; 
 
-        // printf("lookup_stats_update():"\ 
-        //     "\n\t[PREFIX] : %s"\
-        //     "\n\t|F\\R|[%d] = %d\n", 
-        //     (*stats)->prefix,
-        //     req_entry_diff, (*stats)->req_entry_diff_hits[req_entry_diff]);
+        // if (req_entry_diff == 0) {
+        //     printf("lookup_stats_update():"\ 
+        //         "\n\t[PREFIX] : %s"\
+        //         "\n\t|F\\R|[%d] = %d\n", 
+        //         (*stats)->prefix,
+        //         req_entry_diff, (*stats)->req_entry_diffs_fps[req_entry_diff]);
+        // }
     }
+
+    if ((*stats)->req_entry_diffs != NULL)
+        (*stats)->req_entry_diffs[req_entry_diff] += 1;
 
     (*stats)->tps += tps;
     (*stats)->fps += fps;

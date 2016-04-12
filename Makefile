@@ -19,7 +19,7 @@ OBJECTS = $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 ifdef DEBUG
 CFLAGS += -g -ggdb
 else
-CFLAGS +=-O2
+CFLAGS +=-O3
 endif
 
 # search for libs here

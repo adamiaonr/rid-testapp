@@ -90,7 +90,6 @@ extern int pt_ht_add(
         struct click_xia_xid * rid,
         char * prefix,
         int prefix_size);
-
 extern int pt_ht_lookup(
         struct pt_ht * pt_fib,
         char * request,
