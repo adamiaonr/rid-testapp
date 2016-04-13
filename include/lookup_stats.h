@@ -38,7 +38,7 @@ struct lookup_stats {
     // FIXME: this may be useless, but i'll keep it...
     int prefix_size;
 
-    // matches per |F\R| value
+    // matches per |F\R| value (FPs and all matches)
     unsigned long * req_entry_diffs_fps;
     unsigned long * req_entry_diffs;
 

@@ -70,6 +70,86 @@ static __inline int rand_int(int min, int max) {
     return min + rand() / (RAND_MAX / (max - min + 1) + 1);
 }
 
+int update_tp_cond(uint32_t fp_sizes[], uint32_t tp_sizes[], uint32_t tp_cond[][BF_MAX_ELEMENTS]) {
+
+    int i = 0;
+
+    // printf("fp_sizes = ");
+    // for (i = 0; i < BF_MAX_ELEMENTS; i++)
+    //     printf("[%-3d]", fp_sizes[i]);
+
+    // printf("\ntp_sizes = ");
+    // for (i = 0; i < BF_MAX_ELEMENTS; i++)
+    //     printf("[%-3d]", tp_sizes[i]);
+
+    // printf("\n");
+
+    int tp = 0, fp = 0;
+    for (tp = 0; tp < BF_MAX_ELEMENTS; tp++) {
+
+        if (tp_sizes[tp] > 0) {
+
+            for (fp = tp; fp < BF_MAX_ELEMENTS; fp++)
+                tp_cond[tp][fp] += fp_sizes[fp];
+        }
+    }
+
+    // reset the FP and TP sizes arrays
+    for (tp = 0; tp < BF_MAX_ELEMENTS; tp++) {
+        fp_sizes[tp] = 0;
+        tp_sizes[tp] = 0;
+    }
+
+    return 0;
+}
+
+void print_tp_cond(uint32_t tp_cond[][BF_MAX_ELEMENTS]) {
+
+    FILE * output_file = fopen(DEFAULT_TP_SIZE_FILE, "wb");
+
+    printf(
+            "\n-------------------------------------------------------------------------------\n"\
+            "%-8s\t| %-20s\t| %-20s\t\n"\
+            "-------------------------------------------------------------------------------\n",
+            "|TP|", "# FP : |F| = |TP|", "# FP : |F| > |TP|");
+
+    int tp = 0, fp = 0, fps_equal_total = 0, fps_larger_total = 0, tp_cond_fps_equal = 0, tp_cond_fps_larger = 0;
+
+    for (tp = 0; tp < BF_MAX_ELEMENTS; tp++) {
+
+        fps_equal_total = tp_cond[tp][tp];
+        fps_larger_total = 0;
+
+        for (fp = tp + 1; fp < BF_MAX_ELEMENTS; fp++) {
+           fps_larger_total += tp_cond[tp][fp];
+        }
+
+        printf(
+                "%-8d\t| %-20d\t| %-20d\t\n", tp + 1, fps_equal_total, fps_larger_total);
+
+        fprintf(output_file, 
+            "%d,%d,%d\n", 
+            tp + 1,
+            fps_equal_total,
+            fps_larger_total);
+
+        tp_cond_fps_larger += fps_larger_total;
+        tp_cond_fps_equal += fps_equal_total;
+    }
+
+    printf(
+            "-------------------------------------------------------------------------------\n"\
+            "%-8s\t| %-20s\t| %-20s\t\n"\
+            "-------------------------------------------------------------------------------\n"\
+            "%-8d\t| %-20d\t| %-20d\t\n",
+            "TOTAL |TP|", "TOTAL # |F| = |TP|", "TOTAL # |F| > |TP|",
+            BF_MAX_ELEMENTS, tp_cond_fps_equal, tp_cond_fps_larger);
+
+    printf("\n");
+
+    fclose(output_file);
+}
+
 int generate_request_name(char ** request_name, char * request_prefix, int request_size) {
 
 //    int suffixes_num = rand_int(1, SUFFIXES_SIZE);
@@ -96,10 +176,10 @@ int generate_request_name(char ** request_name, char * request_prefix, int reque
 void print_namespace_stats(int * url_sizes, int max_prefix_size) {
 
     printf(
-            "\n--------------------------------------------------------------------------\n"\
+            "\n-------------------------------------------------------------------------------\n"\
             "%-12s\t| %-12s\t\n"\
-            "--------------------------------------------------------------------------\n",
-            "SIZE (|F|)", "NR. ENTRIES");
+            "-------------------------------------------------------------------------------\n",
+            "|F|", "# ENTRIES");
 
     int u_size = 0, nr_u_size = 0, nr_entries = 0;
 
@@ -116,11 +196,11 @@ void print_namespace_stats(int * url_sizes, int max_prefix_size) {
     }
 
     printf(
-            "--------------------------------------------------------------------------\n"\
+            "-------------------------------------------------------------------------------\n"\
             "%-12s\t| %-12s\t\n"\
-            "--------------------------------------------------------------------------\n"\
+            "-------------------------------------------------------------------------------\n"\
             "%-12d\t| %-12d\t\n",
-            "TOTAL |F|", "TOTAL NR. ENTRIES",
+            "TOTAL |F|", "TOTAL # ENTRIES",
             nr_u_size, nr_entries);
 
     printf("\n");
@@ -132,7 +212,7 @@ int main(int argc, char **argv) {
     // elements)
     ht_mode mode = PREFIX_SIZE;
 
-    printf("FPs per forwarding table: LSHT &  Patricia Tries (PTs) as in Papalini et al. 2014\n");
+    printf("Patricia Trie (PT) as in Papalini et al. 2014\n");
 
     // ************************************************************************
     // A) build forwarding tables
@@ -210,9 +290,10 @@ int main(int argc, char **argv) {
     struct click_xia_xid * rid = (struct click_xia_xid *) malloc(sizeof(struct click_xia_xid));
     char * _prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
 
+    // keep track of the number of encoded prefixes
     uint32_t prefix_count = 0;
 
-    while (fgets(prefix, PREFIX_MAX_LENGTH, fr) != NULL && prefix_count < 100000) {
+    while (fgets(prefix, PREFIX_MAX_LENGTH, fr) != NULL && prefix_count < 1000000) {
 
         // A.3.2) remove any trailing newline ('\n') character
         if ((newline_pos = strchr(prefix, '\n')) != NULL)
@@ -309,13 +390,19 @@ int main(int argc, char **argv) {
 
     printf("[rid fwd simulation]: generating random requests out of prefixes in URL file\n");
 
+    // keep track of the number of requested names
     uint32_t request_cnt = 0;
+    // keep track of the sizes of FPs and TPs for each lookup
+    uint32_t fp_sizes[BF_MAX_ELEMENTS] = {0};
+    uint32_t tp_sizes[BF_MAX_ELEMENTS] = {0};
+    // keep track of FP sizes which are larger than a max. TP size for any lookup
+    uint32_t tp_cond[BF_MAX_ELEMENTS][BF_MAX_ELEMENTS] = {0};
 
     cur_time = 0.0;
     max_time = 0.0, min_time = DBL_MAX, avg_time = 0.0, tot_time = 0.0;
 
     // B.3) start reading the URLs in the test data file
-    while (fgets(request_prefix, PREFIX_MAX_LENGTH, fr) != NULL && (request_cnt < 1000)) {
+    while (fgets(request_prefix, PREFIX_MAX_LENGTH, fr) != NULL && (request_cnt < 5000)) {
 
         // B.3.1) remove any trailing newline ('\n') character
         if ((newline_pos = strchr(request_prefix, '\n')) != NULL)
@@ -343,9 +430,14 @@ int main(int argc, char **argv) {
         // printf("[rid fwd simulation]: lookup for %s started\n", request_name);
         request_cnt++;
 
+        if (request_cnt % 1000 == 0)
+            printf("[rid fwd simulation]: ran %d requests (time elapsed : %-.8f)\n", request_cnt, tot_time);
+
         begin = clock();
-        pt_ht_lookup(pt_fib, request_name, request_size, request_rid);
+        pt_ht_lookup(pt_fib, request_name, request_size, request_rid, fp_sizes, tp_sizes);
         end = clock();
+
+        update_tp_cond(fp_sizes, tp_sizes, tp_cond);
 
         // time keeping
         cur_time += (double) (end - begin) / CLOCKS_PER_SEC;
@@ -376,6 +468,7 @@ int main(int argc, char **argv) {
     printf("[rid fwd simulation]: simulation stats:\n");
     pt_ht_print_stats(pt_fib);
     pt_ht_erase(pt_fib);
+    print_tp_cond(tp_cond);
 
     // struct lookup_stats * itr;
 

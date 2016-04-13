@@ -39,8 +39,13 @@
 #define CLICK_XIA_XID_ID_STR_LEN    (2*20 + 2)
 
 #define PREFIX_DELIM                (char * ) "/"
-#define PREFIX_MAX_COUNT            1024
-#define PREFIX_MAX_LENGTH           1024
+#define PREFIX_MAX_COUNT            256
+#define PREFIX_MAX_LENGTH           256
+
+#define DEFAULT_ENTRY_FILE              "test/entry.dat"
+#define DEFAULT_GEN_STATS_FILE          "test/gen-stats.dat"
+#define DEFAULT_REQ_ENTRY_DIFF_FILE     "test/req-entry-diff.dat"
+#define DEFAULT_TP_SIZE_FILE            "test/tp-size.dat"
 
 #define MAX_PREFIX_SIZE             15
 

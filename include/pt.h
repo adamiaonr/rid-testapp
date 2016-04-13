@@ -37,14 +37,17 @@
 #include "lookup_stats.h"
 
 // XXX: modes for printing a patricia trie
-#define PRE_ORDER     0x00
-#define IN_ORDER     0x01
-#define POST_ORDER     0x02
+#define PRE_ORDER       0x00
+#define IN_ORDER        0x01
+#define POST_ORDER      0x02
 
 struct pt_ht {
 
     // prefix size (in number of encoded elements)
     int prefix_size;
+
+    // nr. of forwarding entries
+    uint32_t num_entries;
 
     // pointer to the fwd entry list
     struct pt_fwd * trie;
@@ -54,6 +57,9 @@ struct pt_ht {
     double fea;
     unsigned long fea_n;
 
+    // general statistics for the RID FIB 
+    struct lookup_stats * general_stats;
+
     // makes this structure hashable
     UT_hash_handle hh;
 };
@@ -62,6 +68,9 @@ struct pt_ht {
  * \brief patricia trie fwd table node for an RID FIB.
  */
 struct pt_fwd {
+
+    // pointer to root node of RID subtree
+    struct pt_ht * fib_root;
 
     // node's XID (RID in our case)
     struct click_xia_xid * prefix_rid;
@@ -77,8 +86,8 @@ struct pt_fwd {
     struct pt_fwd * p_left;
     struct pt_fwd * p_right;
 
-    // FIXME: this field is optional as it simply exists to keep a record of
-    // lookup statistics
+    // FIXME: this field should be optional as it simply exists to keep a 
+    // record of lookup statistics per FIB entry
     struct lookup_stats * stats;
 };
 
@@ -94,7 +103,9 @@ extern int pt_ht_lookup(
         struct pt_ht * pt_fib,
         char * request,
         int request_size,
-        struct click_xia_xid * request_rid);
+        struct click_xia_xid * request_rid,
+        uint32_t * fp_sizes,
+        uint32_t * tp_sizes);
 
 extern void pt_fwd_print(struct pt_fwd * node, uint8_t mode);
 

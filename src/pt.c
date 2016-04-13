@@ -205,9 +205,13 @@ void pt_ht_print_stats(struct pt_ht * fib) {
     // general fwd table stats
     uint32_t num_entries = 0, total_entries = 0, total_sizes = 0;
     // false positive stats
-    uint32_t fps_total = 0, gen_total = 0;
+    uint32_t fps_total = 0, tps_total = 0, tns_total = 0, gen_total = 0;
+
     uint32_t fps_f[MAX_PREFIX_SIZE + 1] = {0};
+    uint32_t tps_f[MAX_PREFIX_SIZE + 1] = {0};
+    uint32_t tns_f[MAX_PREFIX_SIZE + 1] = {0};
     uint32_t gen_f[MAX_PREFIX_SIZE + 1] = {0};
+
     uint32_t fps_fr[MAX_PREFIX_SIZE + 1] = {0};
     uint32_t gen_fr[MAX_PREFIX_SIZE + 1] = {0};
     // other stats
@@ -222,68 +226,122 @@ void pt_ht_print_stats(struct pt_ht * fib) {
         .total_matches = 0
     };
 
+    // output files for each one of the tables
+    FILE * output_file = fopen(DEFAULT_ENTRY_FILE, "wb");
+
     // collect the stats (and print the fwd table stats while doing it)
     struct pt_ht * itr;
 
     printf(
-            "\n--------------------------------------------------------------------------\n"\
+            "\n-------------------------------------------------------------------------------\n"\
             "%-12s\t| %-12s\t| %-12s\n"\
-            "--------------------------------------------------------------------------\n",
-            "SIZE (|F|)", "NR. ENTRIES", "AVG. FEA");
+            "-------------------------------------------------------------------------------\n",
+            "|F|", "# ENTRIES", "AVG. FEA");
 
     for (itr = fib; itr != NULL; itr = (struct pt_ht *) itr->hh.next) {
 
-        num_entries = pt_fwd_get_stats(itr->trie, -1, fps_f, fps_fr, gen_f, gen_fr, lookup);
+        // num_entries = pt_fwd_get_stats(itr->trie, -1, fps_f, fps_fr, gen_f, gen_fr, lookup);
         // printf("pt_ht_print_fp_stats() : gathering for |F| = %d\n", itr->prefix_size);
 
-        total_entries += num_entries;
+        fps_f[itr->prefix_size] += itr->general_stats->fps;
+        tps_f[itr->prefix_size] += itr->general_stats->tps;
+        tns_f[itr->prefix_size] += itr->general_stats->tns;
+        gen_f[itr->prefix_size] += itr->general_stats->total_matches;
+
+        int _size = 0; 
+
+        if (itr->general_stats->req_entry_diffs_fps != NULL) {
+
+            for (_size; _size <= itr->prefix_size; _size++) {
+
+                fps_fr[_size] += itr->general_stats->req_entry_diffs_fps[_size];
+                gen_fr[_size] += itr->general_stats->req_entry_diffs[_size];
+            }
+        }
+
+        lookup.tps += itr->general_stats->tps;
+        lookup.fps += itr->general_stats->fps;
+        lookup.tns += itr->general_stats->tns;
+        lookup.total_matches += itr->general_stats->total_matches;
+
+        total_entries += itr->num_entries;
+
+        if (itr->prefix_size < 1)
+            continue;
+
         total_sizes++;
+
         printf(
             "%-12d\t| %-12d\t| %-.6f\n",
-            ((itr->trie->p_left != NULL) ? itr->trie->p_left->prefix_size : itr->trie->p_right->prefix_size),
-            num_entries,
+            // ((itr->trie->p_left != NULL) ? itr->trie->p_left->prefix_size : itr->trie->p_right->prefix_size),
+            itr->prefix_size,
+            itr->num_entries,
+            itr->fea);
+
+        fprintf(output_file, 
+            "%d,%d,%-.6f\n", 
+            itr->prefix_size,
+            itr->num_entries,
             itr->fea);
     }
 
     printf(
-            "--------------------------------------------------------------------------\n"\
+            "-------------------------------------------------------------------------------\n"\
             "%-12s\t| %-12s\t\n"\
-            "--------------------------------------------------------------------------\n"\
+            "-------------------------------------------------------------------------------\n"\
             "%-12d\t| %-12d\t\n",
-            "TOTAL |F|", "TOTAL NR. ENTRIES",
+            "TOTAL |F|", "TOTAL # ENTRIES",
             total_sizes, total_entries);
 
     printf("\n");
 
+    fclose(output_file);
+
     // # of FPs vs. |F| (this is mostly for debugging)
     printf(
-        "\n--------------------------------------------------------------------------\n"\
-        "%-12s\t| %-12s\t| %-12s\t\n"\
-        "--------------------------------------------------------------------------\n",
-        "SIZE (|F|)", "# FPs", "# ALL");
+        "\n-------------------------------------------------------------------------------\n"\
+        "%-12s\t| %-12s\t| %-12s\t| %-12s\t| %-12s\t\n"\
+        "-------------------------------------------------------------------------------\n",
+        "|F|", "# FPs", "# TPs", "# TNs", "# LOOKUPS");
+
+    output_file = fopen(DEFAULT_GEN_STATS_FILE, "wb");
 
     int _size = 1;
     for (_size; _size < MAX_PREFIX_SIZE + 1; _size++) {
 
         fps_total += fps_f[_size];
+        tps_total += tps_f[_size];
+        tns_total += tns_f[_size];
         gen_total += gen_f[_size];
 
         printf(
-                    "%-12d\t| %-12d\t| %-12d\t\n",
-                    _size, fps_f[_size], gen_f[_size]);
+                    "%-12d\t| %-12d\t| %-12d\t| %-12d\t| %-12d\t\n",
+                    _size, fps_f[_size], tps_f[_size], tns_f[_size], gen_f[_size]);
+
+        fprintf(output_file, 
+            "%d,%d,%d,%d,%d\n", 
+            _size,
+            fps_f[_size],
+            tps_f[_size],
+            tns_f[_size],
+            gen_f[_size]);
     }
 
     printf(
-            "--------------------------------------------------------------------------\n"\
-            "%-12s\t| %-12d\t| %-12d\t\n",
-            "TOTAL HITS", fps_total, gen_total);
+            "-------------------------------------------------------------------------------\n"\
+            "%-12s\t| %-12d\t| %-12d\t| %-12d\t| %-12d\t\n",
+            "TOTAL", fps_total, tps_total, tns_total, gen_total);
+
+    fclose(output_file);
 
     // # of FPs vs. |F\R|
     printf(
-        "\n--------------------------------------------------------------------------\n"\
+        "\n-------------------------------------------------------------------------------\n"\
         "%-20s\t| %-12s\t| %-12s\t\n"\
-        "--------------------------------------------------------------------------\n",
-        "REQ-ENTRY DIFF. (|F\\R|)", "# FPs", "# ALL");
+        "-------------------------------------------------------------------------------\n",
+        "REQ-ENTRY DIFF. |F\\R|", "# FPs", "# LOOKUPS");
+
+    output_file = fopen(DEFAULT_REQ_ENTRY_DIFF_FILE, "wb");
 
     _size = 0; fps_total = 0; gen_total = 0;
 
@@ -295,14 +353,22 @@ void pt_ht_print_stats(struct pt_ht * fib) {
         printf(
                     "%-20d\t| %-12d\t| %-12d\t\n",
                     _size, fps_fr[_size], gen_fr[_size]);
+
+        fprintf(output_file, 
+            "%d,%d,%d\n", 
+            _size,
+            fps_fr[_size],
+            gen_fr[_size]);
     }
 
     printf(
-            "--------------------------------------------------------------------------\n"\
+            "-------------------------------------------------------------------------------\n"\
             "%-20s\t| %-12d\t| %-12d\t\n",
-            "TOTAL HITS", fps_total, gen_total);
+            "TOTAL", fps_total, gen_total);
 
     printf("\n");
+
+    fclose(output_file);
 
     lookup_stats_print(&lookup);
 }
@@ -494,13 +560,16 @@ int pt_fwd_remove(struct pt_fwd * n, struct pt_fwd * head) {
     return 1;
 }
 
-struct pt_fwd * pt_fwd_init() {
+struct pt_fwd * pt_fwd_init(struct pt_ht * ht) {
 
     // allocate memory for a new patricia trie (in this case a single node, or
     // fwd entry).
     struct pt_fwd * root = (struct pt_fwd *) malloc(sizeof(struct pt_fwd));
 
     int i = 0;
+
+    // pointer to root node of RID subtree
+    root->fib_root = ht;
 
     // we must now allocate memory a root RID with all bits set
     // to 0
@@ -608,14 +677,19 @@ int pt_ht_add(
     if (s == NULL) {
 
         s = (struct pt_ht *) malloc(sizeof(struct pt_ht));
+
         s->prefix_size = prefix_size;
+        s->num_entries = 0;
 
         // initialize the trie with a `all-zero' root
-        s->trie = pt_fwd_init();
+        s->trie = pt_fwd_init(s);
 
         // FIXME: temporary hack to keep track of one more stat
         s->fea = 0.0;
         s->fea_n = 0;
+
+        s->general_stats = (struct lookup_stats *) malloc(sizeof(struct lookup_stats));
+        lookup_stats_init(&(s->general_stats), prefix, prefix_size);
 
         if (!(s->trie)){
 
@@ -631,6 +705,9 @@ int pt_ht_add(
             //printf("[fwd table build]: pt_fwd_init() successful\n");
         }
     }
+
+    // set the pointer to root node of RID subtree
+    f->fib_root = s;
 
     struct pt_fwd * srch = NULL;
 
@@ -651,6 +728,8 @@ int pt_ht_add(
 
             return -1;
         }
+
+        s->num_entries++;
     }
 
     return 0;
@@ -684,14 +763,16 @@ int pt_fwd_lookup(
         char * request,
         int request_size,
         struct click_xia_xid * request_rid,
-        int prev_key_bit) {
+        int prev_key_bit,
+        uint32_t * fp_sizes,
+        uint32_t * tp_sizes) {
 
     if (node->key_bit <= prev_key_bit) {
 
-//        printf("pt_fwd_lookup(): going upwards for (R) %s (%d vs. %d)\n",
-//                request,
-//                node->key_bit,
-//                prev_key_bit);
+       // printf("pt_fwd_lookup(): going upwards for (R) %s (%d vs. %d)\n",
+       //         request,
+       //         node->key_bit,
+       //         prev_key_bit);
 
         return 0;
     }
@@ -729,7 +810,7 @@ int pt_fwd_lookup(
 
             if (strstr(request, node->stats->prefix) != NULL) {
 
-//                printf("pt_fwd_lookup(): TP %s\n", node->stats->prefix);
+               // printf("pt_fwd_lookup(): TP %s\n", node->stats->prefix);
 
                 tps = 1;
                 matches += tps;
@@ -771,7 +852,19 @@ int pt_fwd_lookup(
             _req_entry_diff, 
             tps, fps, tns, 1);
 
-        matches += pt_fwd_lookup(node->p_right, request, request_size, request_rid, node->key_bit);
+        // FIXME: update the general statistics in the FIB root node. note that 
+        // this way the entry-specific stats are sort of useless.
+        lookup_stats_update(
+            &(node->fib_root->general_stats), 
+            _req_entry_diff, 
+            tps, fps, tns, 1);
+
+        if (node->prefix_size > 0) {
+            fp_sizes[node->prefix_size - 1] += fps;
+            tp_sizes[node->prefix_size - 1] += tps;
+        }
+
+        matches += pt_fwd_lookup(node->p_right, request, request_size, request_rid, node->key_bit, fp_sizes, tp_sizes);
 
     } else {
 
@@ -782,9 +875,19 @@ int pt_fwd_lookup(
             &(node->stats), 
             _req_entry_diff, 
             tps, fps, tns, 1);
+
+        lookup_stats_update(
+            &(node->fib_root->general_stats), 
+            _req_entry_diff, 
+            tps, fps, tns, 1);
+
+        if (node->prefix_size > 0) {
+            fp_sizes[node->prefix_size - 1] += fps;
+            tp_sizes[node->prefix_size - 1] += tps;
+        }
     }
 
-    matches += pt_fwd_lookup(node->p_left, request, request_size, request_rid, node->key_bit);
+    matches += pt_fwd_lookup(node->p_left, request, request_size, request_rid, node->key_bit, fp_sizes, tp_sizes);
 
     return matches;
 }
@@ -793,7 +896,9 @@ int pt_ht_lookup(
         struct pt_ht * pt_fib,
         char * request,
         int request_size,
-        struct click_xia_xid * request_rid) {
+        struct click_xia_xid * request_rid,
+        uint32_t * fp_sizes,
+        uint32_t * tp_sizes) {
 
     // find the largest prefix size which is less than or equal than the
     // request size
@@ -825,7 +930,7 @@ int pt_ht_lookup(
         // just start the whole recursive lookup on the patricia trie
         // FIXME: the '-1' is an hack and an ugly one
         // printf("pt_ht_lookup(): LOOKUP FOR (R) %s\n", request);
-        total_matches = pt_fwd_lookup(f, request, request_size, request_rid, -1);
+        total_matches = pt_fwd_lookup(f, request, request_size, request_rid, -1, fp_sizes, tp_sizes);
 
         // FIXME: ugly hack just to keep track of one more stat
         s->fea = ((s->fea) * (double) s->fea_n) + (double) (1.0 - ((double) total_matches / (double) pt_fwd_count(f, -1)));
