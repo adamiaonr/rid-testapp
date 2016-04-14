@@ -86,9 +86,7 @@ struct pt_fwd {
     struct pt_fwd * p_left;
     struct pt_fwd * p_right;
 
-    // FIXME: this field should be optional as it simply exists to keep a 
-    // record of lookup statistics per FIB entry
-    struct lookup_stats * stats;
+    struct prefix_info * prefix_i;
 };
 
 extern void pt_ht_erase(struct pt_ht * fib);

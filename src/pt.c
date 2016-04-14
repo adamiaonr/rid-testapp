@@ -27,19 +27,19 @@
 #include "pt.h"
 
 /*
- * \brief     private function used to return whether or not bit 'i' (starting
- *             from the most significant bit) is set in an RID.
+ * \brief   private function used to return whether or not bit i (starting
+ *          from the most significant bit) is set in an RID.
  */
 static __inline unsigned long bit(int i, struct click_xia_xid * rid) {
 
-    // XXX: this needs to be changed `a bit(s)' (pun intended): we now have
+    // FIXME: this needs to be changed `a bit(s)' (pun intended): we now have
     // a CLICK_XIA_XID_ID_LEN byte-sized key (the RID) and so i can be in the
     // interval [0, CLICK_XIA_XID_ID_LEN * 8].
     //return key & (1 << (31-i));
 
     // CLICK_XIA_XID_ID_LEN - ((i / 8) - 1) identifies the byte of the RID
     // where bit i should be
-    // XXX: be careful with endianess (particularly big endianess aka
+    // FIXME: be careful with endianess (particularly big endianess aka
     // network order, which may be used for XIDs)
     //printf("(%d) %02X vs. %02X = %02X\n", i, rid->id[CLICK_XIA_XID_ID_LEN - (i / 8) - 1], (1 << (8 - i - 1)), rid->id[CLICK_XIA_XID_ID_LEN - (i / 8) - 1] & (1 << (8 - i - 1)));
 
@@ -71,122 +71,47 @@ static int pt_fwd_count(struct pt_fwd * t, int key_bit) {
     return count;
 }
 
-/*
- * \brief recursively counts the number of entries in a patricia trie.
- */
-static int pt_fwd_dummy(struct pt_fwd * t, int key_bit) {
-
-    int count;
-
-    if (t->key_bit <= key_bit) return 0;
-
-    count = 1;
-
-    // printf("pt_fwd_get_fp_stats():"\ 
-    //     "\n\t[PREFIX] : %s"\
-    //     "\n\t[PREFIX SIZE] : %d vs. %d"\
-    //     "\n\t[|F\\R|] : %s\n", 
-    //     t->stats->prefix,
-    //     t->prefix_size, t->stats->prefix_size,
-    //     ((t->stats->req_entry_diffs_fps == NULL ? "NULL" : "OK")));
-
-    count += pt_fwd_dummy(t->p_left,  t->key_bit);
-    count += pt_fwd_dummy(t->p_right, t->key_bit);
-
-    return count;
-}
-
-static int pt_fwd_get_stats(
-    struct pt_fwd * t, 
-    int key_bit, 
-    uint32_t * fps_f,
-    uint32_t * fps_fr,
-    uint32_t * gen_f,
-    uint32_t * gen_fr,
-    struct lookup_stats & lookup) {
-
-    int _count;
-
-    if (t->key_bit <= key_bit) 
-        return 0;
-
-    // update the nr. of FPs for |F| = t->prefix_size
-    fps_f[t->prefix_size] += t->stats->fps;
-    gen_f[t->prefix_size] += t->stats->total_matches;
-
-    // update the nr. of FPs per |F\R| value. note that the sum of the values 
-    // in this array must be equal to the total nr. of FPs
-    int _size = 0; 
-    _count = 1;
-
-    if (t->stats->req_entry_diffs_fps != NULL) {
-
-        for (_size; _size <= t->prefix_size; _size++) {
-
-            fps_fr[_size] += t->stats->req_entry_diffs_fps[_size];
-            gen_fr[_size] += t->stats->req_entry_diffs[_size];
-
-            // if (_size == BF_MAX_ELEMENTS) {
-                
-            //     printf("pt_fwd_get_fp_stats():"\ 
-            //         "\n\t[PREFIX] : %s"\
-            //         "\n\t[PREFIX SIZE] : %d vs. %d"\
-            //         "\n\t[|F\\R|][%d] : %d\n", 
-            //         t->stats->prefix,
-            //         t->prefix_size, t->stats->prefix_size,
-            //         _size, t->stats->req_entry_diffs[_size]);
-            // }
-        }
-    }
-
-    // lookup stats
-    lookup.tps += t->stats->tps;
-    lookup.fps += t->stats->fps;
-    lookup.tns += t->stats->tns;
-    lookup.total_matches += t->stats->total_matches;
-
-    _count += pt_fwd_get_stats(t->p_left,  t->key_bit, fps_f, fps_fr, gen_f, gen_fr, lookup);
-    _count += pt_fwd_get_stats(t->p_right, t->key_bit, fps_f, fps_fr, gen_f, gen_fr, lookup);
-
-    return _count;
-}
-
 static int pt_ht_erase_rec(
     struct pt_fwd * t, 
     int key_bit) {
+
+    int count;
 
     if (t->key_bit <= key_bit) {
         return 0;
     }
 
+    count = 1;
+
     // carfully free the memory of the pt_fwd struct, step by step
 
-    // 1) the lookup_stats struct first
-    lookup_stats_erase(&(t->stats));
-    free(t->stats);
+    // 1) the prefix_info struct first
+    prefix_info_erase(&(t->prefix_i));
+    free(t->prefix_i);
 
     // 2) prefix_rid
     free(t->prefix_rid);
 
-    pt_ht_erase_rec(t->p_left,  t->key_bit);
-    pt_ht_erase_rec(t->p_right, t->key_bit);
+    count += pt_ht_erase_rec(t->p_left,  t->key_bit);
+    count += pt_ht_erase_rec(t->p_right, t->key_bit);
 
     // finally, the pt_fwd * itself
     //printf("pt_ht_erase_rec() : free(t)\n");
     free(t);
 
-    return 1;
+    return count;
 }
 
 void pt_ht_erase(struct pt_ht * fib) {
 
     struct pt_ht * itr;
+    int count;
 
     for (itr = fib; itr != NULL; itr = (struct pt_ht *) itr->hh.next) {
 
         // printf("pt_ht_erase() : erasing for |F| = %d\n", 
         //     itr->prefix_size);
-        pt_ht_erase_rec(itr->trie, -1);
+        count += pt_ht_erase_rec(itr->trie, -1);
 
         // printf("pt_ht_erase() : erasing for |F| = %d (%d)\n", 
         //     itr->prefix_size,
@@ -195,9 +120,16 @@ void pt_ht_erase(struct pt_ht * fib) {
         // printf("pt_ht_erase() : table for |F| = %d : \n", itr->prefix_size);
         // pt_fwd_print(itr->trie, PRE_ORDER);
 
+        // erase the general stats struct from pt_ht
+        lookup_stats_erase(&(itr->general_stats));
+        free(itr->general_stats);
+        // special deletion operation related to uthash
         HASH_DEL(fib, itr);
+        // finally free the structure
         free(itr);
     }
+
+    printf("pt_ht_erase() : gone through %d prefixes\n", count);
 }
 
 void pt_ht_print_stats(struct pt_ht * fib) {
@@ -216,8 +148,7 @@ void pt_ht_print_stats(struct pt_ht * fib) {
     uint32_t gen_fr[MAX_PREFIX_SIZE + 1] = {0};
     // other stats
     struct lookup_stats lookup = {
-        .prefix = NULL,
-        .prefix_size = 0,
+        .prefix_info = NULL,
         .req_entry_diffs_fps = NULL,
         .req_entry_diffs = NULL,
         .tps = 0,
@@ -585,18 +516,13 @@ struct pt_fwd * pt_fwd_init(struct pt_ht * ht) {
 
     // initialize the struct lookup_stats * attribute w/ an empty
     // prefix string
-    struct lookup_stats * stats = (struct lookup_stats *) malloc(sizeof(struct lookup_stats));
+    struct prefix_info * pi = (struct prefix_info *) malloc(sizeof(struct prefix_info));
     char * prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
 
-    stats->prefix = prefix;
-    stats->prefix_size = 0;
+    pi->prefix = prefix;
+    pi->prefix_size = 0;
 
-    stats->tps = 0;
-    stats->fps = 0;
-    stats->tns = 0;
-    stats->total_matches = 0;
-
-    root->stats = stats;
+    root->prefix_i = pi;
 
     // initialize the rest of the root's attributes and set it's pointers to
     // point to the root itself
@@ -667,10 +593,10 @@ int pt_ht_add(
     f->p_right = NULL;
     f->p_left = NULL;
 
-    // XXX: for control purposes, we also create and fill a lookup_stats struct
-    // and set f->stats to point to it
-    f->stats = (struct lookup_stats *) malloc(sizeof(struct lookup_stats));
-    lookup_stats_init(&(f->stats), prefix, prefix_size);
+    // for control purposes, we also create and fill a prefix_info struct
+    // and set f->prefix_i to point to it
+    f->prefix_i = (struct prefix_info *) malloc(sizeof(struct prefix_info));
+    prefix_info_init(&(f->prefix_i), prefix, prefix_size);
 
     HASH_FIND_INT(*ht, &prefix_size, s);
 
@@ -714,6 +640,10 @@ int pt_ht_add(
     if ((srch = pt_fwd_search(f->prefix_rid, s->trie)) != NULL) {
 
         //printf("[fwd table build]: node with %s (vs. %s) exists!\n", f->stats->prefix, srch->stats->prefix);
+        prefix_info_erase(&(f->prefix_i));
+        free(f->prefix_i);
+        free(f->prefix_rid);
+        free(f);
 
     } else {
 
@@ -721,8 +651,8 @@ int pt_ht_add(
 
             printf("pt_fwd_insert() : ERROR pt_fwd_insert() failed\n");
             
-            lookup_stats_erase(&(f->stats));
-            free(f->stats);
+            prefix_info_erase(&(f->prefix_i));
+            free(f->prefix_i);
             free(f->prefix_rid);
             free(f);
 
@@ -777,7 +707,7 @@ int pt_fwd_lookup(
         return 0;
     }
 
-    uint32_t _req_entry_diff = req_entry_diff(request, node->stats->prefix, node->prefix_size);
+    uint32_t _req_entry_diff = req_entry_diff(request, node->prefix_i->prefix, node->prefix_size);
 
     int tps = 0, fps = 0, tns = 0;
     int matches = 0;
@@ -806,11 +736,11 @@ int pt_fwd_lookup(
 
             // TP or FP check: this requires the consultation of the backup
             // char * on f->stats for substrings of request
-            //printf("%s vs. %s\n", node->stats->prefix, request);
+            //printf("%s vs. %s\n", node->prefix_i->prefix, request);
 
-            if (strstr(request, node->stats->prefix) != NULL) {
+            if (strstr(request, node->prefix_i->prefix) != NULL) {
 
-               // printf("pt_fwd_lookup(): TP %s\n", node->stats->prefix);
+               // printf("pt_fwd_lookup(): TP %s\n", node->prefix_i->prefix);
 
                 tps = 1;
                 matches += tps;
@@ -829,12 +759,12 @@ int pt_fwd_lookup(
             matches += tns;
         }
 
-        // if (fps > 0 && req_entry_diff(request, node->stats->prefix, node->prefix_size) == 0) {
+        // if (fps > 0 && req_entry_diff(request, node->prefix_i->prefix, node->prefix_size) == 0) {
 
         //        char * p = (char *) calloc(CLICK_XIA_XID_ID_STR_LEN, sizeof(char));
         //        char * r = (char *) calloc(CLICK_XIA_XID_ID_STR_LEN, sizeof(char));
 
-        //        printf("pt_fwd_lookup(): (R) %s vs. (P) %s\n", request, node->stats->prefix);
+        //        printf("pt_fwd_lookup(): (R) %s vs. (P) %s\n", request, node->prefix_i->prefix);
         //        printf("pt_fwd_lookup(): (R) %s vs. (P) %s\n",
         //                extract_prefix_bytes(&r, request_rid, node->key_bit),
         //                extract_prefix_bytes(&p, node->prefix_rid, node->key_bit));
@@ -843,14 +773,8 @@ int pt_fwd_lookup(
         //        free(r);
         //        free(p);
 
-        //        printf("pt_fwd_lookup(): FP %s\n", node->stats->prefix);
+        //        printf("pt_fwd_lookup(): FP %s\n", node->prefix_i->prefix);
         // }
-
-        // add the lookup results to the fwd entries own stats record
-        lookup_stats_update(
-            &(node->stats), 
-            _req_entry_diff, 
-            tps, fps, tns, 1);
 
         // FIXME: update the general statistics in the FIB root node. note that 
         // this way the entry-specific stats are sort of useless.
@@ -864,17 +788,15 @@ int pt_fwd_lookup(
             tp_sizes[node->prefix_size - 1] += tps;
         }
 
+        if (tps > 1)
+            return matches;
+
         matches += pt_fwd_lookup(node->p_right, request, request_size, request_rid, node->key_bit, fp_sizes, tp_sizes);
 
     } else {
 
         tns = 1;
         matches += tns;
-
-        lookup_stats_update(
-            &(node->stats), 
-            _req_entry_diff, 
-            tps, fps, tns, 1);
 
         lookup_stats_update(
             &(node->fib_root->general_stats), 
@@ -936,6 +858,9 @@ int pt_ht_lookup(
         s->fea = ((s->fea) * (double) s->fea_n) + (double) (1.0 - ((double) total_matches / (double) pt_fwd_count(f, -1)));
         s->fea_n++;
         s->fea = s->fea / (double) s->fea_n;
+
+        if (tp_sizes[s->prefix_size] > 0)
+            break;
     }
 
     return 0;

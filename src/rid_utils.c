@@ -215,62 +215,38 @@ int rid_hamming_weight(struct click_xia_xid * rid) {
 }
 
 unsigned int req_entry_diff(
-    char * request, 
-    char * entry, 
+    const char * request, 
+    const char * entry, 
     unsigned int entry_size) {
 
-    // at worst, |F\R| = |F|
+    // keep track of the # of |F\R|. at worst, |F\R| = |F|.
     unsigned int req_entry_diff = entry_size;
     unsigned int prefix_count = 0;
 
-    // do this in order not to destroy request and entry in strtok()
-    char _request[PREFIX_MAX_LENGTH];
-    char * _request_ptr;
-    strncpy(_request, request, PREFIX_MAX_LENGTH);
+    // placeholder for entry prefixes (or URL components)
+    char prefix_str[PREFIX_MAX_LENGTH] = {0};
+    // use the positions of PREFIX_DELIM chars to count # of components 
+    // in entry 
+    char * prefix_delim_pos = strchr((char *) entry, PREFIX_DELIM_CHAR);
 
-    char _entry[PREFIX_MAX_LENGTH];
-    char * _entry_ptr;
-    strncpy(_entry, entry, PREFIX_MAX_LENGTH);
+    while (prefix_delim_pos != NULL && (prefix_count <= entry_size)) {
 
-    // extract the first subprefix (i.e. from start of prefix till the first
-    // occurrence of '/')
-    char * _request_token = strtok_r(_request, PREFIX_DELIM, &_request_ptr);
-    char * _entry_token = strtok_r(_entry, PREFIX_DELIM, &_entry_ptr);
+        // let pos be the position of the first PREFIX_DELIM char in entry. then, 
+        // the first prefix of entry is between chars 0 and pos. copy these to 
+        // prefix string.
+        strncpy(prefix_str, entry, prefix_delim_pos - entry + 1);
 
-    while (_entry_token != NULL && (prefix_count <= entry_size)) {
-
-        if (strcmp(_request_token, _entry_token) != 0) {
-
-            // if (req_entry_diff > 1) {
-            //     printf("req_entry_diff(): |F\\R| %d"\
-            //         "\n\t[ REQUEST ] : %s"\
-            //         "\n\t[ ENTRY | |F| ] : %s | %d\n", 
-            //         req_entry_diff, 
-            //         request, 
-            //         entry, entry_size);
-            // }
-
+        // check if the prefix is a substring of the request. if not, 
+        // return immediately.
+        if (strstr(request, prefix_str) == NULL)
             return req_entry_diff;
 
-        } else {
-
-            req_entry_diff--;
-        }
-
-        _request_token = strtok_r(NULL, PREFIX_DELIM, &_request_ptr);
-        _entry_token = strtok_r(NULL, PREFIX_DELIM, &_entry_ptr);
-
-        prefix_count++;
+        // if it is, decrement |F\R|
+        req_entry_diff--;     
+        prefix_count++;   
+        // get the position of the new PREFIX_DELIM
+        prefix_delim_pos = strchr(prefix_delim_pos + 1, PREFIX_DELIM_CHAR);
     }
-
-    // if (req_entry_diff > 1) {
-    //     printf("req_entry_diff(): |F\\R| %d"\
-    //         "\n\t[ REQUEST ] : %s"\
-    //         "\n\t[ ENTRY | |F| ] : %s | %d\n", 
-    //         req_entry_diff, 
-    //         request, 
-    //         entry, entry_size);
-    // }
 
     return req_entry_diff;
 }

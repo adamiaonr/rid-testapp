@@ -30,7 +30,7 @@ void lookup_stats_print(struct lookup_stats * stats) {
             "\n-------------------------------------------------------------------------------\n"\
             "%-12s\t| %-12s\t| %-12s\t| %-12s\t| %-12s\n"\
             "-------------------------------------------------------------------------------\n"\
-            "%-12ld\t| %-12ld\t| %-12ld\t| %-12ld\t| %-.6f\n",
+            "%-12d\t| %-12d\t| %-12d\t| %-12d\t| %-.6f\n",
             "TPs", "FPs", "TNs", "TOTAL", "FP RATE",
             stats->tps,
             stats->fps,
@@ -41,22 +41,33 @@ void lookup_stats_print(struct lookup_stats * stats) {
     printf("\n");
 }
 
+void prefix_info_init(
+        struct prefix_info ** prefix_info,
+        char * prefix,
+        uint8_t prefix_size) {
+
+    (*prefix_info)->prefix = (char *) calloc(strlen(prefix) + 1, sizeof(char));
+    strncpy((*prefix_info)->prefix, prefix, strlen(prefix) + 1);
+    (*prefix_info)->prefix_size = prefix_size;
+}
+
+void prefix_info_erase(struct prefix_info ** prefix_info) {
+
+    free((*prefix_info)->prefix);
+}
+
 void lookup_stats_init(
         struct lookup_stats ** stats,
         char * prefix,
-        int prefix_size) {
+        uint8_t prefix_size) {
 
-    // FIXME: to make things more efficient in terms of space, we assume the
-    // existence of a char array, previously allocated somewhere in the heap.
-    // why? this avoids the double allocation of a char * for entries of type
-    // lsht_fwd and pt_fwd (both will point to the same heap location).
-    (*stats)->prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
-    strncpy((*stats)->prefix, prefix, PREFIX_MAX_LENGTH);
-    // (*stats)->prefix = prefix;
-    (*stats)->prefix_size = prefix_size;
+    // the prefix info will allow to distinguish true positives from false 
+    // positives. this is good for stats gathering...
+    (*stats)->prefix_info = (struct prefix_info *) malloc(sizeof(struct prefix_info));
+    prefix_info_init(&(*stats)->prefix_info, prefix, prefix_size);
 
-    (*stats)->req_entry_diffs_fps = (unsigned long *) calloc(prefix_size + 1, sizeof(unsigned long));
-    (*stats)->req_entry_diffs = (unsigned long *) calloc(prefix_size + 1, sizeof(unsigned long));
+    (*stats)->req_entry_diffs_fps = (uint32_t *) calloc(prefix_size + 1, sizeof(uint32_t));
+    (*stats)->req_entry_diffs = (uint32_t *) calloc(prefix_size + 1, sizeof(uint32_t));
 
     // everything else is initialized to 0
     (*stats)->tps = 0;
@@ -68,7 +79,8 @@ void lookup_stats_init(
 void lookup_stats_erase(struct lookup_stats ** stats) {
 
     // erase the prefix string and |F\R| array
-    free((*stats)->prefix);
+    prefix_info_erase(&(*stats)->prefix_info);
+    free((*stats)->prefix_info);
     free((*stats)->req_entry_diffs_fps);
     free((*stats)->req_entry_diffs);
 
@@ -86,11 +98,11 @@ void lookup_stats_erase(struct lookup_stats ** stats) {
 
 void lookup_stats_update(
         struct lookup_stats ** stats,
-        unsigned int req_entry_diff,
-        unsigned long tps,
-        unsigned long fps,
-        unsigned long tns,
-        unsigned long total_matches) {
+        uint8_t req_entry_diff,
+        uint32_t tps,
+        uint32_t fps,
+        uint32_t tns,
+        uint32_t total_matches) {
 
     // only update when a false positive triggers lookup_stats_update()
     if (fps > 0) {
@@ -121,10 +133,10 @@ struct lookup_stats * lookup_stats_add(
 
     struct lookup_stats * s;
 
-    HASH_FIND_STR(*ht, node->prefix, s);
+    HASH_FIND_STR(*ht, node->prefix_info->prefix, s);
 
     if (s == NULL) {
-        HASH_ADD_KEYPTR(hh, *ht, node->prefix, strlen(node->prefix), node);
+        HASH_ADD_KEYPTR(hh, *ht, node->prefix_info->prefix, strlen(node->prefix_info->prefix), node);
     }
 
     return (*ht);

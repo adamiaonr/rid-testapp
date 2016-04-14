@@ -54,6 +54,10 @@
 #include <time.h>
 #endif
 
+// 
+const int REQUEST_LIMIT     = 5000;
+const int TABLE_SIZE_LIMIT  = 1000000;
+
 const char * SUFFIXES[] = {"/ph", "/ghc", "/cylab", "/9001", "/yt1300", "/r2d2", "/c3po"};
 const int SUFFIXES_SIZE = 7;
 
@@ -208,29 +212,28 @@ void print_namespace_stats(int * url_sizes, int max_prefix_size) {
 
 int main(int argc, char **argv) {
 
-    // XXX: default mode for FIB organization is by prefix size (in nr. of URL
+    // default mode for FIB organization is by prefix size (in nr. of URL
     // elements)
     ht_mode mode = PREFIX_SIZE;
 
     printf("Patricia Trie (PT) as in Papalini et al. 2014\n");
 
     // ************************************************************************
-    // A) build forwarding tables
+    // 1) build forwarding tables
     // ************************************************************************
 
-    // A.1) the base data structures which will hold the FIBs. we try to use
-    // the data types which will be used by the Click modular router
-
-    // XXX: Patricia Trie (PT) FIB: also an HT indexed by prefix size +
-    // ptree pointer (we do NOT index by Hamming weight (HW) here as in
+    // we use a Patricia Trie (PT) FIB. basically an HT indexed by prefix size +
+    // pt_fwd pointer. we do NOT index by Hamming weight (HW) here as in
     // Papalini et al. 2014: note that regardless of the pair {|F|, k},
-    // the most probable HW to get is always ~70, when m = 160 bit).
+    // the most probable HW to get is always ~70, when m = 160 bit). check 
+    // the results on evenrnote which back this up.
     struct pt_ht * pt_fib = NULL;
 
-    // A.2) open an URL file
+    // open the input URL file. the prefixes to encode in the table are taken 
+    // from it.
     printf("[fwd table build]: reading .tbl file\n");
 
-    char * url_file_name = (char *) calloc(128, sizeof(char));
+    char url_file_name[128] = {0};
 
     if (argc > 2 && !(strncmp(argv[1], "-f", 2))) {
 
@@ -238,7 +241,7 @@ int main(int argc, char **argv) {
 
     } else {
 
-        // A.2.1) use a default one if argument not given...
+        // use a default one if argument not given...
         printf("[fwd table build]: ERROR : no .tbl file supplied. aborting.\n");
 
         return -1;
@@ -258,76 +261,70 @@ int main(int argc, char **argv) {
 
     // } else {
 
-    //     // A.2.1) use a default one if argument not given...
+    //     // use a default one if argument not given...
     //     printf("[fwd table build]: using default URL file: %s\n", DEFAULT_URL_FILE);
     //     strncpy(url_file_name, DEFAULT_URL_FILE, strlen(DEFAULT_URL_FILE));
     // }
 
     FILE * fr = fopen(url_file_name, "rt");
 
-    // A.3) start reading the URLs and add forwarding entries
-    // to each FIB
+    // start reading the URLs and add forwarding entries to each FIB
     char prefix[PREFIX_MAX_LENGTH];
     char * newline_pos;
 
-    // // A.3.1) hts with direct references to `per prefix' lookup statistics
-    // struct lookup_stats * pt_stats_ht = NULL;
+    // just an aux array to keep stats on URL sizes. note that the distribution 
+    // of URLs which are READ from the file may be different from the 
+    // distribution of URLs WRITTEN to the FIB (e.g. due to repeated URLs, 
+    // irregular URLs, etc.)
+    int url_sizes[PREFIX_MAX_COUNT] = {0};
+    int max_prefix_size = 0;
 
-    // A.3.1.1) auxiliary variables for stats gathering...
-    // FIXME: this is ugly and you should feel bad...
-    // struct pt_fwd * p = NULL;
-
-    // A.3.1.2) just an aux array to keep stats on URL sizes
-    int url_sizes[PREFIX_MAX_COUNT] = {0}, max_prefix_size = 0;
-
-    // we will keep track of max, min and avg. route add/lookup times
+    // we will keep track of max, min, avg. and total route add/lookup times
     clock_t begin, end;
-
     double cur_time = 0.0;
     double max_time = 0.0, min_time = DBL_MAX, avg_time = 0.0, tot_time = 0.0;
 
     // create an RID out of the prefix
     struct click_xia_xid * rid = (struct click_xia_xid *) malloc(sizeof(struct click_xia_xid));
-    char * _prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
+//    char _prefix[PREFIX_MAX_LENGTH] = {0};
 
     // keep track of the number of encoded prefixes
     uint32_t prefix_count = 0;
+    int prefix_size = 0;
 
-    while (fgets(prefix, PREFIX_MAX_LENGTH, fr) != NULL && prefix_count < 1000000) {
+    while (fgets(prefix, PREFIX_MAX_LENGTH, fr) != NULL && prefix_count < TABLE_SIZE_LIMIT) {
 
-        // A.3.2) remove any trailing newline ('\n') character
+        // remove any trailing newline ('\n') character
         if ((newline_pos = strchr(prefix, '\n')) != NULL)
             *(newline_pos) = '\0';
 
         // create an RID out of the prefix
         memset(rid, 0, sizeof(struct click_xia_xid));
-        // struct click_xia_xid * rid = (struct click_xia_xid *) malloc(sizeof(struct click_xia_xid));
-        int prefix_size = name_to_rid(&rid, prefix);
+        prefix_size = name_to_rid(&rid, prefix);
 
         // // FIXME: based on the mode argument, we may need to change the value
         // // of prefix_size to the Hamming weight (nr. of '1s' in RID)
         // if (mode == HAMMING_WEIGHT)
         //     prefix_size = rid_hamming_weight(rid);
 
-        // XXX: update the URL size stats
+        // update the URL size stats
         url_sizes[prefix_size - 1]++;
 
         if (prefix_size > max_prefix_size)
             max_prefix_size = prefix_size;
 
-        // A.3.3) allocate memory in the heap for this prefix, which will be
-        // pointed to by lookup_stats struct *'s in fwd entries, used for
-        // control and data gathering
-        memset(_prefix, 0, PREFIX_MAX_LENGTH);
-        // char * _prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
-        strncpy(_prefix, prefix, PREFIX_MAX_LENGTH);
+        // memset(_prefix, 0, PREFIX_MAX_LENGTH);
+        // strncpy(_prefix, prefix, PREFIX_MAX_LENGTH);
 
-        // printf("[fwd table build]: adding URL %s (size %d)\n", _prefix, prefix_size);
+        // printf("[fwd table build]: adding URL %s (size %d)\n", prefix, prefix_size);
 
-        // A.3.5) PT FIB
+        // add rid (and prefix for TP stats tracking) to RID FIB
         begin = clock();
-        pt_ht_add(&pt_fib, rid, _prefix, prefix_size);
+        pt_ht_add(&pt_fib, rid, prefix, prefix_size);
         end = clock();
+
+        if (++prefix_count % 100000 == 0)
+            printf("[fwd table build]: added %d prefixes (time elapsed : %-.8f)\n", prefix_count, tot_time);
 
         // time keeping
         cur_time += (double) (end - begin) / CLOCKS_PER_SEC;
@@ -337,9 +334,6 @@ int main(int argc, char **argv) {
             min_time = cur_time;
         else if (max_time < cur_time)
             max_time = cur_time;
-
-        //lookup_stats_add(&pt_stats_ht, p->stats);
-        prefix_count++;
     }
 
     printf("[fwd table build]: done. added %d prefixes to FIB: "\
@@ -365,27 +359,27 @@ int main(int argc, char **argv) {
     fclose(fr);
 
     // ************************************************************************
-    // B) start testing requests against the forwarding tables just built
+    // 2) start testing requests against the forwarding tables just built
     // ************************************************************************
 
     printf("[rid fwd simulation]: reading .req file\n");
 
-    // B.1) re-open the test data file
+    // FIXME: re-open the test data file
     fr = fopen(url_file_name, "rt");
 
-    // B.2) create useful vars for the matching tests:
+    // create useful vars for the matching tests:
 
-    // B.2.1) request prefix and name:
-    //    -#     request_prefix: directly retrieved from the URL file `as is'
-    //    -#     request_name: the actual name used to generate an
-    //         RID, created by adding a few more URL elements to the prefix
-    char * request_prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
+    // request prefix and name:
+    //    -# request_prefix: directly retrieved from the URL file `as is'
+    //    -# request_name: the actual name used to generate an
+    //          RID, created by adding a few more URL elements to the prefix
+    char request_prefix[PREFIX_MAX_LENGTH];
     char * request_name = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
 
-    // B.2.2) the RID `holder'
+    // the RID `holder'
     struct click_xia_xid * request_rid = (struct click_xia_xid *) malloc(sizeof(struct click_xia_xid));
 
-    // B.2.3) request size (guides the lookup procedures)
+    // request size (guides the lookup procedures)
     int request_size = 0;
 
     printf("[rid fwd simulation]: generating random requests out of prefixes in URL file\n");
@@ -398,26 +392,29 @@ int main(int argc, char **argv) {
     // keep track of FP sizes which are larger than a max. TP size for any lookup
     uint32_t tp_cond[BF_MAX_ELEMENTS][BF_MAX_ELEMENTS] = {0};
 
+    // re-initialize time keeping variables
     cur_time = 0.0;
     max_time = 0.0, min_time = DBL_MAX, avg_time = 0.0, tot_time = 0.0;
 
-    // B.3) start reading the URLs in the test data file
-    while (fgets(request_prefix, PREFIX_MAX_LENGTH, fr) != NULL && (request_cnt < 5000)) {
+    // start reading the URLs in the test data file
+    // FIXME: at this point we're simply re-reading the input file for the FIB 
+    // and appending extra name components to the them
+    while (fgets(request_prefix, PREFIX_MAX_LENGTH, fr) != NULL && (request_cnt < REQUEST_LIMIT)) {
 
-        // B.3.1) remove any trailing newline ('\n') character
+        // remove any trailing newline ('\n') character
         if ((newline_pos = strchr(request_prefix, '\n')) != NULL)
             *(newline_pos) = '\0';
 
-        // B.3.1) remove any trailing PREFIX_DELIM ('/') character
-        if (request_prefix[strlen(request_prefix) - 1] == '/')
+        // remove any trailing PREFIX_DELIM_CHAR ('/') character
+        if (request_prefix[strlen(request_prefix) - 1] == PREFIX_DELIM_CHAR)
             request_prefix[strlen(request_prefix) - 1] = '\0';
 
-        // B.3.1) generate some random name out of the request prefix by adding
+        // generate some random name out of the request prefix by adding
         // a random number of elements to it
         if (generate_request_name(&request_name, request_prefix, BF_MAX_ELEMENTS) < 0)
             continue;
 
-        // B.3.2) generate RIDs out of the request names
+        // generate RIDs out of the request names
         request_size = name_to_rid(&request_rid, request_name);
 
         // // FIXME: based on the mode argument, we may need to change the value
@@ -425,18 +422,18 @@ int main(int argc, char **argv) {
         // if (mode == HAMMING_WEIGHT)
         //     request_size = rid_hamming_weight(request_rid);
 
-        // B.3.3) pass the request RID through the FIBs, gather the
-        // lookup stats
-        // printf("[rid fwd simulation]: lookup for %s started\n", request_name);
-        request_cnt++;
-
-        if (request_cnt % 1000 == 0)
+        if (++request_cnt % 100 == 0)
             printf("[rid fwd simulation]: ran %d requests (time elapsed : %-.8f)\n", request_cnt, tot_time);
 
+        // printf("[rid fwd simulation]: lookup for %s started\n", request_name);
+
+        // pass the request RID through the FIBs, gather the
+        // lookup stats
         begin = clock();
         pt_ht_lookup(pt_fib, request_name, request_size, request_rid, fp_sizes, tp_sizes);
         end = clock();
 
+        // update the TP stats
         update_tp_cond(fp_sizes, tp_sizes, tp_cond);
 
         // time keeping
@@ -479,12 +476,11 @@ int main(int argc, char **argv) {
 
     fclose(fr);
 
-    free(request_rid);
-    free(url_file_name);
-    free(rid);
-    free(_prefix);
-    free(request_prefix);
+    // strings
     free(request_name);
+    // click_xia_xid structs
+    free(request_rid);
+    free(rid);
 
     return 0;
 }

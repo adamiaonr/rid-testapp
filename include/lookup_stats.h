@@ -30,41 +30,54 @@
 #include "uthash.h"
 #include "rid_utils.h"
 
-struct lookup_stats {
+struct prefix_info {
 
     // pointer to a copy of the respective prefix URL, in its non-encoded form
     char * prefix;
-
     // FIXME: this may be useless, but i'll keep it...
-    int prefix_size;
+    uint8_t prefix_size;
+};
+
+struct lookup_stats {
+
+    // pointer to a copy of the respective prefix URL, in its non-encoded form
+    struct prefix_info * prefix_info;
 
     // matches per |F\R| value (FPs and all matches)
-    unsigned long * req_entry_diffs_fps;
-    unsigned long * req_entry_diffs;
+    uint32_t * req_entry_diffs_fps;
+    uint32_t * req_entry_diffs;
 
     // the actual statistics: (TPs, FPs, TNs, total number of matches)
-    unsigned long tps;
-    unsigned long fps;
-    unsigned long tns;
-    unsigned long total_matches;
+    uint32_t tps;
+    uint32_t fps;
+    uint32_t tns;
+    uint32_t total_matches;
 
     // makes this structure hashable, so that results per prefix are quickly
     // accessed
     UT_hash_handle hh;
 };
 
+extern void prefix_info_init(
+        struct prefix_info ** prefix_info,
+        char * prefix,
+        uint8_t prefix_size);
+
+extern void prefix_info_erase(
+        struct prefix_info ** prefix_info);
+
 extern void lookup_stats_init(
         struct lookup_stats ** stats,
         char * prefix,
-        int prefix_size);
+        uint8_t prefix_size);
 
 extern void lookup_stats_update(
         struct lookup_stats ** stats,
-        unsigned int req_entry_diff,
-        unsigned long tps,
-        unsigned long fps,
-        unsigned long tns,
-        unsigned long total_matches);
+        uint8_t req_entry_diff,
+        uint32_t tps,
+        uint32_t fps,
+        uint32_t tns,
+        uint32_t total_matches);
 
 extern struct lookup_stats * lookup_stats_add(
         struct lookup_stats ** ht,

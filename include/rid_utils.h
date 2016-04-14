@@ -39,6 +39,7 @@
 #define CLICK_XIA_XID_ID_STR_LEN    (2*20 + 2)
 
 #define PREFIX_DELIM                (char * ) "/"
+#define PREFIX_DELIM_CHAR           (const char) '/'
 #define PREFIX_MAX_COUNT            256
 #define PREFIX_MAX_LENGTH           256
 
@@ -55,7 +56,12 @@ struct click_xia_xid {
 };
 
 extern char * extract_prefix_bytes(char ** to, struct click_xia_xid * rid, int trailing_bit);
-extern unsigned int req_entry_diff(char * request, char * entry, unsigned int entry_size);
+
+extern unsigned int req_entry_diff(
+    const char * request, 
+    const char * entry, 
+    unsigned int entry_size);
+
 extern int count_prefixes(char * prefix);
 extern int name_to_rid(struct click_xia_xid ** rid, char * _prefix);
 extern int rid_compare(struct click_xia_xid * a, struct click_xia_xid * b);
