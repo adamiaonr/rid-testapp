@@ -41,9 +41,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
+#include <assert.h>
 
 // XXX: as a substitute for <click/hashtable.hh>
 #include "uthash.h"
+// playing with fire... i mean threads now...
+#include "threadpool.h"
 
 #include "pt.h"
 #include "lookup_stats.h"
@@ -54,21 +57,12 @@
 #include <time.h>
 #endif
 
-// 
-const int REQUEST_LIMIT     = 5000;
-const int TABLE_SIZE_LIMIT  = 1000000;
+// max. request size and table size limits
+#define REQUEST_LIMIT       10
+#define TABLE_SIZE_LIMIT    100000
 
 const char * SUFFIXES[] = {"/ph", "/ghc", "/cylab", "/9001", "/yt1300", "/r2d2", "/c3po"};
 const int SUFFIXES_SIZE = 7;
-
-const char * DEFAULT_URL_FILE = "url.txt";
-
-// constants for different ways of grouping forwarding entries in FIBs: (1)
-// by prefix size (PREFIX_SIZE_MODE = 0x01) or (2) Hamming weight
-// (HAMMING_WEIGHT_MODE = 0x02), i.e. number of '1s' in the XID of the
-// entry
-typedef enum {PREFIX_SIZE, HAMMING_WEIGHT} ht_mode;
-static const char * ht_mode_strs[] = {"p", "h"};
 
 static __inline int rand_int(int min, int max) {
     return min + rand() / (RAND_MAX / (max - min + 1) + 1);
@@ -89,12 +83,14 @@ int update_tp_cond(uint32_t fp_sizes[], uint32_t tp_sizes[], uint32_t tp_cond[][
     // printf("\n");
 
     int tp = 0, fp = 0;
-    for (tp = 0; tp < BF_MAX_ELEMENTS; tp++) {
+    for (tp = BF_MAX_ELEMENTS - 1; tp > -1; tp--) {
 
         if (tp_sizes[tp] > 0) {
 
             for (fp = tp; fp < BF_MAX_ELEMENTS; fp++)
                 tp_cond[tp][fp] += fp_sizes[fp];
+
+            break;
         }
     }
 
@@ -212,9 +208,8 @@ void print_namespace_stats(int * url_sizes, int max_prefix_size) {
 
 int main(int argc, char **argv) {
 
-    // default mode for FIB organization is by prefix size (in nr. of URL
-    // elements)
-    ht_mode mode = PREFIX_SIZE;
+    // // all them pt_ht threads will be swimmin' up in here...
+    // threadpool_t * pool;
 
     printf("Patricia Trie (PT) as in Papalini et al. 2014\n");
 
@@ -399,6 +394,14 @@ int main(int argc, char **argv) {
     // start reading the URLs in the test data file
     // FIXME: at this point we're simply re-reading the input file for the FIB 
     // and appending extra name components to the them
+
+    // initialize the thread pool. note that the number of jobs is (at most) 
+    // the number of requests * the number of possible prefix sizes
+    // assert((pool = threadpool_create(NUM_THREADS, REQUEST_LIMIT, 0)) != NULL);
+
+    // printf("[rid fwd simulation]: thread pool started with %d threads and %d jobs\n", 
+    //     NUM_THREADS, REQUEST_LIMIT * BF_MAX_ELEMENTS);
+
     while (fgets(request_prefix, PREFIX_MAX_LENGTH, fr) != NULL && (request_cnt < REQUEST_LIMIT)) {
 
         // remove any trailing newline ('\n') character
@@ -448,6 +451,9 @@ int main(int argc, char **argv) {
         memset(request_name, 0, PREFIX_MAX_LENGTH);
         memset(request_prefix, 0, PREFIX_MAX_LENGTH);
     }
+
+    // // destroy them threads in them pool...
+    // assert(threadpool_destroy(pool, 0) == 0);
 
     printf("[rid fwd simulation]: done. looked up %ld requests: "\
         "\n\t[TOT_TIME]: %-.8f"\

@@ -31,8 +31,13 @@
 #include <stdlib.h>    /* free(), malloc() */
 #include <string.h>    /* bcopy() */
 #include <stdint.h>
+#include <unistd.h>
+#include <assert.h>
+#include <pthread.h>
 
 #include "uthash.h"
+// playing with fire... i mean threads now...
+#include "threadpool.h"
 #include "rid_utils.h"
 #include "lookup_stats.h"
 
@@ -89,6 +94,24 @@ struct pt_fwd {
     struct prefix_info * prefix_i;
 };
 
+struct pt_fwd_lookup_tdata {
+
+    int thread_id;
+    int condition_var;
+
+    struct pt_fwd * node;
+
+    char * request;
+    int request_size;
+    
+    struct click_xia_xid * request_rid;
+
+    int prev_key_bit;
+    
+    uint32_t * fp_sizes;
+    uint32_t * tp_sizes;
+};
+
 extern void pt_ht_erase(struct pt_ht * fib);
 extern void pt_ht_print_stats(struct pt_ht * fib);
 extern struct pt_ht * pt_ht_search(struct pt_ht * ht, int prefix_size);
@@ -97,7 +120,8 @@ extern int pt_ht_add(
         struct click_xia_xid * rid,
         char * prefix,
         int prefix_size);
-extern int pt_ht_lookup(
+
+extern void pt_ht_lookup(
         struct pt_ht * pt_fib,
         char * request,
         int request_size,

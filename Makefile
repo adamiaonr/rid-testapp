@@ -23,11 +23,11 @@ CFLAGS +=-O3
 endif
 
 # search for libs here
-LDFLAGS += -Llib/libbloom/build -Llib/uthash
+LDFLAGS += -Llib/libbloom/build -Llib/threadpool -Llib/uthash
 # add these libs for linking
-LIB += -lbloom $(LIBS)
+LIB += -lbloom -lthreadpool -lpthread $(LIBS)
 # special include dirs to add
-INC += -Iinclude -Ilib/libbloom -Ilib/uthash/src
+INC += -Iinclude -Ilib/libbloom -Ilib/threadpool/src -Ilib/uthash/src
 
 all: $(TARGET)
 	mkdir -p $(BINDIR)
@@ -39,12 +39,14 @@ $(TARGET): $(OBJECTS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	make -C lib/libbloom
+	make -C lib/threadpool
 	@mkdir -p $(BUILDDIR)
 	@echo "$(CC) $(CFLAGS) $(INC) -c $< -o $@"; $(CC) $(CFLAGS) $(INC) -c $< -o $@
 	
 clean:
 	@echo " Cleaning...";
 	make -C lib/libbloom clean
+	make -C lib/threadpool clean
 	@echo " $(RM) -r $(BUILDDIR) $(BINDIR)"; $(RM) -r $(BUILDDIR) $(BINDIR) *~
 
 .PHONY: clean

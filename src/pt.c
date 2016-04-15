@@ -26,6 +26,13 @@
 
 #include "pt.h"
 
+// 1 thread per core?
+#define NUM_THREADS 6
+
+int condition_var = 0;
+pthread_mutex_t lock;
+threadpool_t * pool;
+
 /*
  * \brief   private function used to return whether or not bit i (starting
  *          from the most significant bit) is set in an RID.
@@ -740,7 +747,7 @@ int pt_fwd_lookup(
 
             if (strstr(request, node->prefix_i->prefix) != NULL) {
 
-               // printf("pt_fwd_lookup(): TP %s\n", node->prefix_i->prefix);
+                // printf("pt_fwd_lookup(): TP %s\n", node->prefix_i->prefix);
 
                 tps = 1;
                 matches += tps;
@@ -759,7 +766,7 @@ int pt_fwd_lookup(
             matches += tns;
         }
 
-        // if (fps > 0 && req_entry_diff(request, node->prefix_i->prefix, node->prefix_size) == 0) {
+        // if (fps > 0) {
 
         //        char * p = (char *) calloc(CLICK_XIA_XID_ID_STR_LEN, sizeof(char));
         //        char * r = (char *) calloc(CLICK_XIA_XID_ID_STR_LEN, sizeof(char));
@@ -788,8 +795,10 @@ int pt_fwd_lookup(
             tp_sizes[node->prefix_size - 1] += tps;
         }
 
-        if (tps > 1)
+        if (tps > 1) {
+
             return matches;
+        }
 
         matches += pt_fwd_lookup(node->p_right, request, request_size, request_rid, node->key_bit, fp_sizes, tp_sizes);
 
@@ -814,7 +823,29 @@ int pt_fwd_lookup(
     return matches;
 }
 
-int pt_ht_lookup(
+void pt_fwd_lookup_thread(void * t_args) {
+
+    struct pt_fwd_lookup_tdata * t_data = (pt_fwd_lookup_tdata *) t_args;
+
+    pt_fwd_lookup(
+        t_data->node, 
+        t_data->request, 
+        t_data->request_size, 
+        t_data->request_rid, 
+        -1, 
+        t_data->fp_sizes, 
+        t_data->tp_sizes);
+
+    pthread_mutex_lock(&lock);
+    condition_var--;
+    pthread_mutex_unlock(&lock);
+
+    // printf("pt_fwd_lookup_thread(): finished lookup for prefix size %d. condition_var = %d\n",
+    //     t_data->node->fib_root->prefix_size,
+    //     condition_var);
+}
+
+void pt_ht_lookup(
         struct pt_ht * pt_fib,
         char * request,
         int request_size,
@@ -825,8 +856,13 @@ int pt_ht_lookup(
     // find the largest prefix size which is less than or equal than the
     // request size
     struct pt_ht * s = NULL;
+    struct pt_ht * itr = NULL;
     int prefix_size = request_size;
     uint32_t total_matches = 0;
+
+    assert((pool = threadpool_create(NUM_THREADS, MAX_PREFIX_SIZE * 2, 0)) != NULL);
+    // printf("pt_ht_lookup(): thread pool started with %d threads and %d jobs\n", 
+    //         NUM_THREADS, MAX_PREFIX_SIZE + 1);
 
     while ((s == NULL) && prefix_size > 0)
         s = pt_ht_search(pt_fib, prefix_size--);
@@ -836,11 +872,15 @@ int pt_ht_lookup(
     // XXX: we are guaranteed (?) to follow a decreasing order because we
     // sort the pt_ht (by prefix size) every time we add a new entry
     struct pt_fwd * f = NULL;
+    
+    struct pt_fwd_lookup_tdata * t_args = (struct pt_fwd_lookup_tdata *) calloc(MAX_PREFIX_SIZE + 1, sizeof(struct pt_fwd_lookup_tdata));
+    // using global variables is sad, and you should feel bad...
+    condition_var = request_size + 1;
 
-    for ( ; s != NULL; s = (struct pt_ht *) s->hh.prev) {
+    for (itr = s; itr != NULL; itr = (struct pt_ht *) itr->hh.prev) {
 
         // linear search-match on the entry's patricia trie...
-        f = s->trie;
+        f = itr->trie;
 
         if (!f) {
 
@@ -851,19 +891,39 @@ int pt_ht_lookup(
 
         // just start the whole recursive lookup on the patricia trie
         // FIXME: the '-1' is an hack and an ugly one
-        // printf("pt_ht_lookup(): LOOKUP FOR (R) %s\n", request);
-        total_matches = pt_fwd_lookup(f, request, request_size, request_rid, -1, fp_sizes, tp_sizes);
+        //total_matches = pt_fwd_lookup(f, request, request_size, request_rid, -1, fp_sizes, tp_sizes);
 
-        // FIXME: ugly hack just to keep track of one more stat
-        s->fea = ((s->fea) * (double) s->fea_n) + (double) (1.0 - ((double) total_matches / (double) pt_fwd_count(f, -1)));
-        s->fea_n++;
-        s->fea = s->fea / (double) s->fea_n;
+        // FIXME: we will be using threads and a threadpool 
+        // prepare the pt_fwd_lookup_tdata struct to pass as argument to 
+        // threadpool_add()
+        t_args[itr->prefix_size].thread_id = itr->prefix_size;
+        t_args[itr->prefix_size].node = f;
+        t_args[itr->prefix_size].request = request;
+        t_args[itr->prefix_size].request_size = request_size;
+        t_args[itr->prefix_size].request_rid = request_rid;
+        t_args[itr->prefix_size].prev_key_bit = -1;
+        t_args[itr->prefix_size].fp_sizes = fp_sizes;
+        t_args[itr->prefix_size].tp_sizes = tp_sizes;
 
-        if (tp_sizes[s->prefix_size] > 0)
-            break;
+        // we use 1 thread per PT subtree. we use a pool of NUM_THREADS and 
+        // run MAX_PREFIX_SIZE jobs per each request. we do not use locks 
+        // on fp_sizes and tp_sizes, as these are just accumulators, only read 
+        // at the end of a lookup (note that the parallelization only happens 
+        // per PT subtree, i.e. we don't lookup requests in parallel)
+        assert(threadpool_add(pool, &pt_fwd_lookup_thread, &t_args[itr->prefix_size], 0) == 0);
+
+        // if (tp_sizes[s->prefix_size] > 0)
+        //     break;
     }
 
-    return 0;
+    while (condition_var > 0) {
+        usleep(1000);
+    }
+
+    // destroy them threads in them pool...
+    assert(threadpool_destroy(pool, 0) == 0);
+
+    free(t_args);
 }
 
 void pt_fwd_print(
