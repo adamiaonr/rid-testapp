@@ -30,13 +30,13 @@ void lookup_stats_print(struct lookup_stats * stats) {
             "\n-------------------------------------------------------------------------------\n"\
             "%-12s\t| %-12s\t| %-12s\t| %-12s\t| %-12s\n"\
             "-------------------------------------------------------------------------------\n"\
-            "%-12d\t| %-12d\t| %-12d\t| %-12d\t| %-.6f\n",
-            "TPs", "FPs", "TNs", "TOTAL", "FP RATE",
+            "%-12d\t| %-12d\t| %-12d\t| %-12d\t| %-.5LE\n",
+            "# TPs", "# FPs", "# TNs", "# LOOKUPS", "FP RATE",
             stats->tps,
             stats->fps,
             stats->tns,
             stats->total_matches,
-            ((double) stats->fps / ((double) stats->tps + (double) stats->fps)));
+            (long double) ((long double) stats->fps / ((long double) stats->total_matches)));
 
     printf("\n");
 }

@@ -46,6 +46,9 @@
 #define IN_ORDER        0x01
 #define POST_ORDER      0x02
 
+// 1 thread per core (at least in my machine)?
+#define NUM_THREADS 4
+
 struct pt_ht {
 
     // prefix size (in number of encoded elements)

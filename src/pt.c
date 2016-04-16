@@ -26,37 +26,31 @@
 
 #include "pt.h"
 
-// 1 thread per core?
-#define NUM_THREADS 6
-
 int condition_var = 0;
 pthread_mutex_t lock;
 threadpool_t * pool;
 
 /*
- * \brief   private function used to return whether or not bit i (starting
+ * \brief   returns whether or not bit i (starting
  *          from the most significant bit) is set in an RID.
+ *
+ * \param   i   index of bit to be checked (0 is msb)
+ * \param   rid rid on which bit i will be checked
+ *
+ * \return  1 if bit i is set, 0 if not set.
  */
 static __inline unsigned long bit(int i, struct click_xia_xid * rid) {
 
-    // FIXME: this needs to be changed `a bit(s)' (pun intended): we now have
-    // a CLICK_XIA_XID_ID_LEN byte-sized key (the RID) and so i can be in the
-    // interval [0, CLICK_XIA_XID_ID_LEN * 8].
-    //return key & (1 << (31-i));
-
     // CLICK_XIA_XID_ID_LEN - ((i / 8) - 1) identifies the byte of the RID
     // where bit i should be
-    // FIXME: be careful with endianess (particularly big endianess aka
-    // network order, which may be used for XIDs)
+
+    // FIXME: endianess? is that a problem?
     //printf("(%d) %02X vs. %02X = %02X\n", i, rid->id[CLICK_XIA_XID_ID_LEN - (i / 8) - 1], (1 << (8 - i - 1)), rid->id[CLICK_XIA_XID_ID_LEN - (i / 8) - 1] & (1 << (8 - i - 1)));
 
     return rid->id[CLICK_XIA_XID_ID_LEN - (i / 8) - 1] & (1 << (8 - (i % 8) - 1));
 }
 
-/*
- * \brief recursively counts the number of entries in a patricia trie.
- */
-static int pt_fwd_count(struct pt_fwd * t, int key_bit) {
+static int pt_fwd_count_rec(struct pt_fwd * t, int key_bit) {
 
     int count;
 
@@ -72,10 +66,22 @@ static int pt_fwd_count(struct pt_fwd * t, int key_bit) {
     //     t->prefix_size, t->stats->prefix_size,
     //     ((t->stats->req_entry_diffs_fps == NULL ? "NULL" : "OK")));
 
-    count += pt_fwd_count(t->p_left,  t->key_bit);
-    count += pt_fwd_count(t->p_right, t->key_bit);
+    count += pt_fwd_count_rec(t->p_left,  t->key_bit);
+    count += pt_fwd_count_rec(t->p_right, t->key_bit);
 
     return count;
+}
+
+/*
+ * \brief counts the number of entries in a FIB subtree
+ *
+ * \param   sub_tree FIB subtree to be counted
+ *
+ * \return  number of entries in sub_tree
+ */
+int pt_fwd_count(struct pt_fwd * t) {
+
+    return pt_fwd_count_rec(t, -1);
 }
 
 static int pt_ht_erase_rec(
@@ -90,9 +96,9 @@ static int pt_ht_erase_rec(
 
     count = 1;
 
-    // carfully free the memory of the pt_fwd struct, step by step
+    // carefully free the memory of the pt_fwd struct, step by step...
 
-    // 1) the prefix_info struct first
+    // 1) the prefix_info struct 1st
     prefix_info_erase(&(t->prefix_i));
     free(t->prefix_i);
 
@@ -109,6 +115,11 @@ static int pt_ht_erase_rec(
     return count;
 }
 
+/*
+ * \brief   erases and frees the memory held by a complete RID FIB
+ *
+ * \param   fib the FIB to be freed
+ */
 void pt_ht_erase(struct pt_ht * fib) {
 
     struct pt_ht * itr;
@@ -132,13 +143,25 @@ void pt_ht_erase(struct pt_ht * fib) {
         free(itr->general_stats);
         // special deletion operation related to uthash
         HASH_DEL(fib, itr);
-        // finally free the structure
+        // finally free the pt_ht struct (a FIB subtree)
         free(itr);
     }
 
     printf("pt_ht_erase() : gone through %d prefixes\n", count);
 }
 
+/*
+ * \brief   prints statistics about the RID FIB (including info related to 
+ *          a previous run of requests)
+ * 
+ * this prints 3 types of info, collected the root of each PT subtree:
+ *  -# |F| distribution (# entries per prefix size)
+ *  -# #FP, #TPs, #TNs and #LOOKUPS per prefix size
+ *  -# #FPs and #LOOKUPS per |F\R| 
+ *  -# total #FPs, #TPs, #TNs, #LOOKUPS and FP rate (#FP / #LOOKUPS)
+ *
+ * \param   fib the FIB of which stats will be printed
+ */
 void pt_ht_print_stats(struct pt_ht * fib) {
 
     // general fwd table stats
@@ -823,6 +846,15 @@ int pt_fwd_lookup(
     return matches;
 }
 
+
+/*
+ * \brief thread function, wrapper for the recursive pt_fwd_lookup() function
+ *
+ * updates a global condition variable (condition_var), which determines when 
+ * the lookup for a given prefix size is over.
+ * 
+ * \return
+ */
 void pt_fwd_lookup_thread(void * t_args) {
 
     struct pt_fwd_lookup_tdata * t_data = (pt_fwd_lookup_tdata *) t_args;
@@ -853,33 +885,51 @@ void pt_ht_lookup(
         uint32_t * fp_sizes,
         uint32_t * tp_sizes) {
 
-    // find the largest prefix size which is less than or equal than the
-    // request size
     struct pt_ht * s = NULL;
     struct pt_ht * itr = NULL;
     int prefix_size = request_size;
-    uint32_t total_matches = 0;
+    uint32_t total_matches = 0; 
 
+    // find the largest prefix size which is less than or equal than the 
+    // request size
+    // FIXME: we don't support partial RID queries... yet!
+    while ((s == NULL) && prefix_size > 0)
+        s = pt_ht_search(pt_fib, prefix_size--);
+
+    struct pt_fwd * f = NULL;
+    
+    // we will be using threads and a thread pool to speed up the lookup 
+    // process.
+    // we use 1 thread per prefix size subtree in the FIB. we use a pool of 
+    // NUM_THREADS and run (at most) MAX_PREFIX_SIZE jobs per each request. 
+
+    // we do not use locks on the fp_sizes and tp_sizes arrays, as these are 
+    // just 'dumb' accumulators, read at the end of a lookup only: no RAW 
+    // hazards are possible. 
+
+    // note that the parallelization only happens 
+    // per PT subtree, i.e. we don't lookup requests in parallel.
     assert((pool = threadpool_create(NUM_THREADS, MAX_PREFIX_SIZE * 2, 0)) != NULL);
     // printf("pt_ht_lookup(): thread pool started with %d threads and %d jobs\n", 
     //         NUM_THREADS, MAX_PREFIX_SIZE + 1);
 
-    while ((s == NULL) && prefix_size > 0)
-        s = pt_ht_search(pt_fib, prefix_size--);
+    // FIXME: after some trial-and-error, i found out i had to explicitly 
+    // allocate memory to t_args using calloc(), otherwise a buffer overflow 
+    // problem would emerge when pt_ht_lookup() returned. still don't know why...
+    struct pt_fwd_lookup_tdata * t_args = 
+        (struct pt_fwd_lookup_tdata *) calloc(MAX_PREFIX_SIZE + 1, sizeof(struct pt_fwd_lookup_tdata));
+    // update the global thread termination condition variable. the condition 
+    // variable is set to the number of prefix size subtrees encoded in the FIB, 
+    // given by HASH_COUNT().
+    // FIXME: using global variables is sad, and you should feel bad...
+    condition_var = HASH_COUNT(pt_fib);
 
-    // iterate the HT back from prefix_size to 1 to get all possible matching
-    // prefix sizes
-    // XXX: we are guaranteed (?) to follow a decreasing order because we
-    // sort the pt_ht (by prefix size) every time we add a new entry
-    struct pt_fwd * f = NULL;
-    
-    struct pt_fwd_lookup_tdata * t_args = (struct pt_fwd_lookup_tdata *) calloc(MAX_PREFIX_SIZE + 1, sizeof(struct pt_fwd_lookup_tdata));
-    // using global variables is sad, and you should feel bad...
-    condition_var = request_size + 1;
-
+    // iterate the FIB prefix size subtrees back from prefix_size to 1 to get 
+    // all possible matching prefixes. we are guaranteed (?) to follow a 
+    // decreasing order because we sort the pt_ht (by prefix size) every time 
+    // we add a new entry
     for (itr = s; itr != NULL; itr = (struct pt_ht *) itr->hh.prev) {
 
-        // linear search-match on the entry's patricia trie...
         f = itr->trie;
 
         if (!f) {
@@ -889,11 +939,6 @@ void pt_ht_lookup(
             continue;
         }
 
-        // just start the whole recursive lookup on the patricia trie
-        // FIXME: the '-1' is an hack and an ugly one
-        //total_matches = pt_fwd_lookup(f, request, request_size, request_rid, -1, fp_sizes, tp_sizes);
-
-        // FIXME: we will be using threads and a threadpool 
         // prepare the pt_fwd_lookup_tdata struct to pass as argument to 
         // threadpool_add()
         t_args[itr->prefix_size].thread_id = itr->prefix_size;
@@ -905,17 +950,12 @@ void pt_ht_lookup(
         t_args[itr->prefix_size].fp_sizes = fp_sizes;
         t_args[itr->prefix_size].tp_sizes = tp_sizes;
 
-        // we use 1 thread per PT subtree. we use a pool of NUM_THREADS and 
-        // run MAX_PREFIX_SIZE jobs per each request. we do not use locks 
-        // on fp_sizes and tp_sizes, as these are just accumulators, only read 
-        // at the end of a lookup (note that the parallelization only happens 
-        // per PT subtree, i.e. we don't lookup requests in parallel)
+        // pt_fwd_lookup_thread() starts the whole recursive lookup on the FIB 
+        // subtree for prefix size itr->prefix_size
         assert(threadpool_add(pool, &pt_fwd_lookup_thread, &t_args[itr->prefix_size], 0) == 0);
-
-        // if (tp_sizes[s->prefix_size] > 0)
-        //     break;
     }
 
+    // wait on condition_var for the end of all subtree lookups
     while (condition_var > 0) {
         usleep(1000);
     }

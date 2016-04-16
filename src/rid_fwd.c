@@ -58,8 +58,9 @@
 #endif
 
 // max. request size and table size limits
-#define REQUEST_LIMIT       10
-#define TABLE_SIZE_LIMIT    100000
+#define REQUEST_LIMIT       5000
+#define TABLE_SIZE_LIMIT    1000000
+#define MIN_PREFIX_SIZE     4
 
 const char * SUFFIXES[] = {"/ph", "/ghc", "/cylab", "/9001", "/yt1300", "/r2d2", "/c3po"};
 const int SUFFIXES_SIZE = 7;
@@ -152,8 +153,13 @@ void print_tp_cond(uint32_t tp_cond[][BF_MAX_ELEMENTS]) {
 
 int generate_request_name(char ** request_name, char * request_prefix, int request_size) {
 
+    int prefix_count = count_prefixes(request_prefix);    
+
+    // if (prefix_count < MIN_PREFIX_SIZE)
+    //     return -1;
+
 //    int suffixes_num = rand_int(1, SUFFIXES_SIZE);
-    int suffixes_num = request_size - count_prefixes(request_prefix);
+    int suffixes_num = request_size - prefix_count;
 
     if (suffixes_num < 0)
         return -1;
@@ -296,6 +302,9 @@ int main(int argc, char **argv) {
         // create an RID out of the prefix
         memset(rid, 0, sizeof(struct click_xia_xid));
         prefix_size = name_to_rid(&rid, prefix);
+
+        if (prefix_size < MIN_PREFIX_SIZE)
+            continue;
 
         // // FIXME: based on the mode argument, we may need to change the value
         // // of prefix_size to the Hamming weight (nr. of '1s' in RID)
