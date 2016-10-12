@@ -43,6 +43,12 @@
 #include <string.h>
 #include <assert.h>
 
+#include <algorithm>
+#include <string>
+#include <map>
+#include <list>
+
+#include "argvparser.h"
 // XXX: as a substitute for <click/hashtable.hh>
 #include "uthash.h"
 // playing with fire... i mean threads now...
@@ -60,13 +66,73 @@
 // max. request size and table size limits
 #define REQUEST_LIMIT       5000
 #define TABLE_SIZE_LIMIT    1000000
-#define MIN_PREFIX_SIZE     4
 
-const char * SUFFIXES[] = {"/ph", "/ghc", "/cylab", "/9001", "/yt1300", "/r2d2", "/c3po"};
-const int SUFFIXES_SIZE = 7;
+#define OPTION_URL_FILE             (char *) "url-file"
+#define OPTION_SUFFIX_FILE          (char *) "suffix-file"
+#define OPTION_OUTPUT_DIR           (char *) "output-dir"
+#define OPTION_MIN_PREFIX_SIZE      (char *) "min-prefix-size"
+#define OPTION_TABLE_SIZE           (char *) "table-size"
+#define OPTION_RANDOM               (char *) "random"
+
+using namespace std;
+using namespace CommandLineProcessing;
+
+const char * SUFFIXES[] = {"/ph", "/ghc", "/cylab", "/9001", "/yt1300", "/r2d2",
+    "/c3po", "/xpto12x1", "/8t88", "/cuc", "/cic", "/nsh", "/bb8", "/wh", "/bh", "/mmh"};
+const int SUFFIXES_SIZE = 16;
 
 static __inline int rand_int(int min, int max) {
     return min + rand() / (RAND_MAX / (max - min + 1) + 1);
+}
+
+typedef std::map<int, std::vector<std::string>> PrefixHist;
+
+ArgvParser * create_argv_parser() {
+
+    ArgvParser * cmds = new ArgvParser();
+
+    cmds->setIntroductoryDescription("\n\nrid-testapp v1.0\n\napplication to "\
+        "test custom RID forwarding tables, built out of input URL datasets."\
+        "\nby adamiaonr@cmu.edu");
+
+    cmds->setHelpOption("h", "help", "help page.");
+
+    cmds->defineOption(
+            OPTION_URL_FILE,
+            "path to .txt file w/ list of URLs",
+            ArgvParser::OptionRequiresValue);
+
+    cmds->defineOption(
+            OPTION_SUFFIX_FILE,
+            "path to .txt file w/ list of suffixes. these are used to generate"\
+                "requests and extended prefixes.",
+            ArgvParser::OptionRequiresValue);
+
+    cmds->defineOption(
+            OPTION_OUTPUT_DIR,
+            "directory on which to dump output data.",
+            ArgvParser::OptionRequiresValue);
+
+    cmds->defineOption(
+            OPTION_TABLE_SIZE,
+            "size of fwd table, in nr. of entries. default is 10^6.",
+            ArgvParser::OptionRequiresValue);
+
+    cmds->defineOption(
+            OPTION_MIN_PREFIX_SIZE,
+            "the sizes of forwarding entries (in terms of encoded URL "\
+                "components) is set to a MINIMUM size. the size of the table "\
+                "will be as specified (see --table-size option), but composed by larger "\
+                "entries. default is 1.",
+            ArgvParser::OptionRequiresValue);
+
+    cmds->defineOption(
+            OPTION_RANDOM,
+            "prefixes just added to the forwarding table are added as 'request prefixes' at random, with"\ 
+                "a probability of 50\%. by default, it's false.",
+            ArgvParser::NoOptionAttribute);
+
+    return cmds;
 }
 
 int update_tp_cond(uint32_t fp_sizes[], uint32_t tp_sizes[], uint32_t tp_cond[][BF_MAX_ELEMENTS]) {
@@ -104,9 +170,12 @@ int update_tp_cond(uint32_t fp_sizes[], uint32_t tp_sizes[], uint32_t tp_cond[][
     return 0;
 }
 
-void print_tp_cond(uint32_t tp_cond[][BF_MAX_ELEMENTS]) {
+void print_tp_cond(uint32_t tp_cond[][BF_MAX_ELEMENTS], std::string output_dir) {
 
-    FILE * output_file = fopen(DEFAULT_TP_SIZE_FILE, "wb");
+    std::string filename = output_dir + std::string("/") + std::string(DEFAULT_TP_SIZE_FILE);
+    FILE * output_file = fopen(filename.c_str(), "wb");
+    // write the first line
+    fprintf(output_file, "TP_SIZE\tFP_EQUAL\tFP_LARGER\n");
 
     printf(
             "\n-------------------------------------------------------------------------------\n"\
@@ -129,7 +198,7 @@ void print_tp_cond(uint32_t tp_cond[][BF_MAX_ELEMENTS]) {
                 "%-8d\t| %-20d\t| %-20d\t\n", tp + 1, fps_equal_total, fps_larger_total);
 
         fprintf(output_file, 
-            "%d,%d,%d\n", 
+            "%d\t%d\t%d\n", 
             tp + 1,
             fps_equal_total,
             fps_larger_total);
@@ -153,7 +222,7 @@ void print_tp_cond(uint32_t tp_cond[][BF_MAX_ELEMENTS]) {
 
 int generate_request_name(char ** request_name, char * request_prefix, int request_size) {
 
-    int prefix_count = count_prefixes(request_prefix);    
+    int prefix_count = count_prefixes(request_prefix);
 
     // if (prefix_count < MIN_PREFIX_SIZE)
     //     return -1;
@@ -161,13 +230,18 @@ int generate_request_name(char ** request_name, char * request_prefix, int reque
 //    int suffixes_num = rand_int(1, SUFFIXES_SIZE);
     int suffixes_num = request_size - prefix_count;
 
-    if (suffixes_num < 0)
+    if (suffixes_num < 0) {
+
+        fprintf(stderr, "generate_request_name() : counted %d prefixes in %s\n",
+            prefix_count,
+            request_prefix);
         return -1;
+    }
 
     strncpy(*request_name, request_prefix, PREFIX_MAX_LENGTH);
 
-    if (suffixes_num == 0)
-        printf("generate_request_name() : already at |R| = %d : %s\n", request_size, *request_name);
+    // if (suffixes_num == 0)
+    //     printf("generate_request_name() : already at |R| = %d : %s\n", request_size, *request_name);
 
     int request_name_lenght = strlen(*request_name);
 
@@ -212,10 +286,35 @@ void print_namespace_stats(int * url_sizes, int max_prefix_size) {
     printf("\n");
 }
 
-int main(int argc, char **argv) {
+int adjust_prefix_size(
+    char ** prefix, 
+    int min_prefix_size, 
+    const char ** suffix_list, int suffix_list_size) {
 
-    // // all them pt_ht threads will be swimmin' up in here...
-    // threadpool_t * pool;
+    // C++ is so convenient for this stuff... so why use C?
+    int prefix_length = strlen(*prefix);
+    std::string _prefix = std::string(*prefix);
+
+    // count the number of URL elements in prefix
+    int num_prefixes = std::count(_prefix.begin(), _prefix.end(), '/') + 1;
+
+    // the resulting prefix cannot be larger than MAX_PREFIX_SIZE
+    int num_prefixes_add = 0;
+    if (num_prefixes + (min_prefix_size - 1) > MAX_PREFIX_SIZE)
+        num_prefixes_add = MAX_PREFIX_SIZE - num_prefixes;
+    else
+        num_prefixes_add = (min_prefix_size - 1);
+
+    for ( ; num_prefixes_add > 0; num_prefixes_add--) {
+
+        strncat(*prefix, suffix_list[rand_int(0, suffix_list_size - 1)], (PREFIX_MAX_LENGTH - prefix_length));
+        num_prefixes++;
+    }
+
+    return num_prefixes;
+}
+
+int main(int argc, char **argv) {
 
     printf("Patricia Trie (PT) as in Papalini et al. 2014\n");
 
@@ -230,21 +329,87 @@ int main(int argc, char **argv) {
     // the results on evenrnote which back this up.
     struct pt_ht * pt_fib = NULL;
 
-    // open the input URL file. the prefixes to encode in the table are taken 
-    // from it.
-    printf("[fwd table build]: reading .tbl file\n");
+    // parse the arguments with an ArgvParser
+    ArgvParser * cmds = create_argv_parser();
 
+    // arg placeholders
     char url_file_name[128] = {0};
+    char suffix_file_name[128] = {0};
+    char output_dir[128] = {0};
 
-    if (argc > 2 && !(strncmp(argv[1], "-f", 2))) {
+    int min_prefix_size = 1;
+    int table_size = TABLE_SIZE_LIMIT;
+    
+    bool random = false;
 
-        strncpy(url_file_name, argv[2], strlen(argv[2]));
+    // parse() takes the arguments to main() and parses them according to 
+    // ArgvParser rules
+    int result = cmds->parse(argc, argv);
+
+    // if something went wrong: show help option
+    if (result != ArgvParser::NoParserError) {
+
+        fprintf(stderr, "%s\n", cmds->parseErrorDescription(result).c_str());
+
+        if (result != ArgvParser::ParserHelpRequested) {
+            fprintf(stderr, "use option -h for help.\n");
+        }
+
+        delete cmds;
+        return -1;
 
     } else {
 
-        // use a default one if argument not given...
-        printf("[fwd table build]: ERROR : no .tbl file supplied. aborting.\n");
+        // otherwise, check for the different OPTION_
+        if (cmds->foundOption(OPTION_URL_FILE)) {
 
+            strncpy(url_file_name, (char *) cmds->optionValue(OPTION_URL_FILE).c_str(), 128);
+            
+        } else {
+
+            fprintf(stderr, "no URL file path specified. use "\
+                "option -h for help.\n");
+
+            delete cmds;
+            return -1;
+        }
+
+        if (cmds->foundOption(OPTION_OUTPUT_DIR)) {
+
+            strncpy(output_dir, (char *) cmds->optionValue(OPTION_OUTPUT_DIR).c_str(), 128);
+            
+        } else {
+
+            fprintf(stderr, "no output dir specified. use "\
+                "option -h for help.\n");
+
+            delete cmds;
+            return -1;
+        }
+
+        if (cmds->foundOption(OPTION_SUFFIX_FILE)) {
+
+            strncpy(suffix_file_name, (char *) cmds->optionValue(OPTION_SUFFIX_FILE).c_str(), 128);
+            
+        }
+
+        if (cmds->foundOption(OPTION_MIN_PREFIX_SIZE)) {
+
+            min_prefix_size = std::stoi(cmds->optionValue(OPTION_MIN_PREFIX_SIZE));   
+        }
+
+        if (cmds->foundOption(OPTION_TABLE_SIZE)) {
+
+            table_size = std::stoi(cmds->optionValue(OPTION_TABLE_SIZE));   
+        }
+
+        if (cmds->foundOption(OPTION_RANDOM)) {
+            random = true;
+        }
+    }
+
+    if (result == ArgvParser::ParserHelpRequested) {
+        delete cmds;
         return -1;
     }
 
@@ -270,7 +435,7 @@ int main(int argc, char **argv) {
     FILE * fr = fopen(url_file_name, "rt");
 
     // start reading the URLs and add forwarding entries to each FIB
-    char prefix[PREFIX_MAX_LENGTH];
+    char * prefix = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
     char * newline_pos;
 
     // just an aux array to keep stats on URL sizes. note that the distribution 
@@ -279,31 +444,80 @@ int main(int argc, char **argv) {
     // irregular URLs, etc.)
     int url_sizes[PREFIX_MAX_COUNT] = {0};
     int max_prefix_size = 0;
-
     // we will keep track of max, min, avg. and total route add/lookup times
     clock_t begin, end;
     double cur_time = 0.0;
     double max_time = 0.0, min_time = DBL_MAX, avg_time = 0.0, tot_time = 0.0;
-
     // create an RID out of the prefix
     struct click_xia_xid * rid = (struct click_xia_xid *) malloc(sizeof(struct click_xia_xid));
-//    char _prefix[PREFIX_MAX_LENGTH] = {0};
-
     // keep track of the number of encoded prefixes
     uint32_t prefix_count = 0;
     int prefix_size = 0;
 
-    while (fgets(prefix, PREFIX_MAX_LENGTH, fr) != NULL && prefix_count < TABLE_SIZE_LIMIT) {
+    // collect the prefixes which will be used to build requests afterwards, 
+    // up to a max of REQUEST_LIMIT. the prefixes should be evenly 
+    // distributed over the range [min_prefix_size, MAX_PREFIX_SIZE].
+    int request_prefixes_num = 0, p_size = 0, p_length = 0;
+    PrefixHist request_prefixes;
+
+    while (fgets(prefix, PREFIX_MAX_LENGTH, fr) != NULL && prefix_count < table_size) {
+
+        // if the prefix is too large (string size), don't consider it
+        p_length = strlen(prefix);
+        if ((float) p_length > ((float) PREFIX_MAX_LENGTH * 0.75))
+            continue;
 
         // remove any trailing newline ('\n') character
-        if ((newline_pos = strchr(prefix, '\n')) != NULL)
+        if ((newline_pos = strchr(prefix, '\n')) != NULL) {
+
+            // void the character which used to hold '\n'
             *(newline_pos) = '\0';
+
+            // reduce the length accordingly
+            // FIXME: why not p_length-- ?
+            p_length = strlen(prefix);
+        }
+
+        if (prefix[0] == '/') {
+            // prefix = prefix + 1;
+            // p_length--;
+            // printf("[fwd table build]: removed '/' at start of prefix %s (before) vs. %s (after)\n", 
+            //     prefix - 1, 
+            //     prefix);
+            continue;
+        }
+
+        // remove trailing '/'
+        if (prefix[p_length - 1] == '/') {
+
+            // printf("[fwd table build]: last character is '/': %s\n", prefix);
+            prefix[p_length - 1] = '\0';
+            p_length--;
+        }
+
+        // don't add it if the prefix size is larger than MAX_PREFIX_SIZE
+        std::string p = std::string(prefix);
+        p_size = (std::count(p.begin(), p.end(), '/') + 1);
+        if (p_size > MAX_PREFIX_SIZE)
+            continue;
+
+        // adjust the size of the prefix size, given the min. prefix size 
+        // and a list of suffixes
+        // std::string p = std::string(prefix);
+        // p_size = std::count(p.begin(), p.end(), '/');
+        // printf("[fwd table build]: adjusting prefix %s (size: %d, target: > %d)\n", 
+        //     prefix, 
+        //     p_size + 1, min_prefix_size);
+        //p_size = adjust_prefix_size(&prefix, min_prefix_size, SUFFIXES, SUFFIXES_SIZE);
+        // printf("[fwd table build]: adjusted prefix to %s (size: %d, target: > %d)\n", 
+        //     prefix, 
+        //     p_size, min_prefix_size);
 
         // create an RID out of the prefix
         memset(rid, 0, sizeof(struct click_xia_xid));
         prefix_size = name_to_rid(&rid, prefix);
 
-        if (prefix_size < MIN_PREFIX_SIZE)
+        if (prefix_size < min_prefix_size)
             continue;
 
         // // FIXME: based on the mode argument, we may need to change the value
@@ -314,11 +528,24 @@ int main(int argc, char **argv) {
         // update the URL size stats
         url_sizes[prefix_size - 1]++;
 
+        // add the prefix to the list which will be used to generate requests
+        if (request_prefixes[prefix_size - 1].size() < (REQUEST_LIMIT / (MAX_PREFIX_SIZE - min_prefix_size + 1))) {
+
+            // if OPTION_RANDOM is selected, add the prefix with a probability 
+            // of 0.5
+            if (random && (rand_int(0, 1) < 1)) {
+
+                continue;
+            
+            } else {
+
+                request_prefixes[prefix_size - 1].push_back(std::string(prefix));
+                request_prefixes_num++;
+            }
+        }
+
         if (prefix_size > max_prefix_size)
             max_prefix_size = prefix_size;
-
-        // memset(_prefix, 0, PREFIX_MAX_LENGTH);
-        // strncpy(_prefix, prefix, PREFIX_MAX_LENGTH);
 
         // printf("[fwd table build]: adding URL %s (size %d)\n", prefix, prefix_size);
 
@@ -360,16 +587,18 @@ int main(int argc, char **argv) {
     //    pt_fwd_print(itr->trie, PRE_ORDER);
     // }
 
+    // statistics about requests
+    printf("[fwd table build]: request prefix histogram has %d prefixes: ", request_prefixes_num);
+    PrefixHist::iterator itr;
+    for (itr = request_prefixes.begin(); itr != request_prefixes.end(); itr++)
+        printf("\n\t[SIZE: %d]: %d", (itr)->first, (itr)->second.size());
+    printf("\n"); 
+
     fclose(fr);
 
     // ************************************************************************
     // 2) start testing requests against the forwarding tables just built
     // ************************************************************************
-
-    printf("[rid fwd simulation]: reading .req file\n");
-
-    // FIXME: re-open the test data file
-    fr = fopen(url_file_name, "rt");
 
     // create useful vars for the matching tests:
 
@@ -379,15 +608,10 @@ int main(int argc, char **argv) {
     //          RID, created by adding a few more URL elements to the prefix
     char request_prefix[PREFIX_MAX_LENGTH];
     char * request_name = (char *) calloc(PREFIX_MAX_LENGTH, sizeof(char));
-
     // the RID `holder'
     struct click_xia_xid * request_rid = (struct click_xia_xid *) malloc(sizeof(struct click_xia_xid));
-
     // request size (guides the lookup procedures)
     int request_size = 0;
-
-    printf("[rid fwd simulation]: generating random requests out of prefixes in URL file\n");
-
     // keep track of the number of requested names
     uint32_t request_cnt = 0;
     // keep track of the sizes of FPs and TPs for each lookup
@@ -400,69 +624,63 @@ int main(int argc, char **argv) {
     cur_time = 0.0;
     max_time = 0.0, min_time = DBL_MAX, avg_time = 0.0, tot_time = 0.0;
 
-    // start reading the URLs in the test data file
-    // FIXME: at this point we're simply re-reading the input file for the FIB 
-    // and appending extra name components to the them
+    printf("[rid fwd simulation]: generating random requests out of prefixes in request prefix histogram\n");
 
-    // initialize the thread pool. note that the number of jobs is (at most) 
-    // the number of requests * the number of possible prefix sizes
-    // assert((pool = threadpool_create(NUM_THREADS, REQUEST_LIMIT, 0)) != NULL);
+    for (itr = request_prefixes.begin(); itr != request_prefixes.end(); itr++) {
 
-    // printf("[rid fwd simulation]: thread pool started with %d threads and %d jobs\n", 
-    //     NUM_THREADS, REQUEST_LIMIT * BF_MAX_ELEMENTS);
+        for (int i = 0; i < (itr)->second.size(); i++) {
 
-    while (fgets(request_prefix, PREFIX_MAX_LENGTH, fr) != NULL && (request_cnt < REQUEST_LIMIT)) {
+            // extract the request prefix from the request_prefix map
+            strncpy(request_prefix, (itr)->second[i].c_str(), PREFIX_MAX_LENGTH);
 
-        // remove any trailing newline ('\n') character
-        if ((newline_pos = strchr(request_prefix, '\n')) != NULL)
-            *(newline_pos) = '\0';
+            // generate some random name out of the request prefix by adding
+            // a random number of elements to it
+            if (generate_request_name(&request_name, request_prefix, BF_MAX_ELEMENTS) < 0) {
 
-        // remove any trailing PREFIX_DELIM_CHAR ('/') character
-        if (request_prefix[strlen(request_prefix) - 1] == PREFIX_DELIM_CHAR)
-            request_prefix[strlen(request_prefix) - 1] = '\0';
+                fprintf(
+                    stderr, 
+                    "[rid fwd simulation]: [ERROR] aborted request generation for prefix %s (size %d)\n", 
+                    request_prefix, 
+                    (itr)->first + 1);
 
-        // generate some random name out of the request prefix by adding
-        // a random number of elements to it
-        if (generate_request_name(&request_name, request_prefix, BF_MAX_ELEMENTS) < 0)
-            continue;
+                continue;
+            }
 
-        // generate RIDs out of the request names
-        request_size = name_to_rid(&request_rid, request_name);
+            // generate RIDs out of the request names
+            request_size = name_to_rid(&request_rid, request_name);
 
-        // // FIXME: based on the mode argument, we may need to change the value
-        // // of prefix_size to the Hamming weight (nr. of '1s' in RID)
-        // if (mode == HAMMING_WEIGHT)
-        //     request_size = rid_hamming_weight(request_rid);
+            // // FIXME: based on the mode argument, we may need to change the value
+            // // of prefix_size to the Hamming weight (nr. of '1s' in RID)
+            // if (mode == HAMMING_WEIGHT)
+            //     request_size = rid_hamming_weight(request_rid);
 
-        if (++request_cnt % 100 == 0)
-            printf("[rid fwd simulation]: ran %d requests (time elapsed : %-.8f)\n", request_cnt, tot_time);
+            if (++request_cnt % 100 == 0)
+                printf("[rid fwd simulation]: ran %d requests (time elapsed : %-.8f)\n", request_cnt, tot_time);
 
-        // printf("[rid fwd simulation]: lookup for %s started\n", request_name);
+            // printf("[rid fwd simulation]: lookup for %s started\n", request_name);
 
-        // pass the request RID through the FIBs, gather the
-        // lookup stats
-        begin = clock();
-        pt_ht_lookup(pt_fib, request_name, request_size, request_rid, fp_sizes, tp_sizes);
-        end = clock();
+            // pass the request RID through the FIBs, gather the
+            // lookup stats
+            begin = clock();
+            pt_ht_lookup(pt_fib, request_name, request_size, request_rid, fp_sizes, tp_sizes);
+            end = clock();
 
-        // update the TP stats
-        update_tp_cond(fp_sizes, tp_sizes, tp_cond);
+            // update the TP stats
+            update_tp_cond(fp_sizes, tp_sizes, tp_cond);
 
-        // time keeping
-        cur_time += (double) (end - begin) / CLOCKS_PER_SEC;
-        tot_time += cur_time;
+            // time keeping
+            cur_time += (double) (end - begin) / CLOCKS_PER_SEC;
+            tot_time += cur_time;
 
-        if (min_time > cur_time)
-            min_time = cur_time;
-        else if (max_time < cur_time)
-            max_time = cur_time;
+            if (min_time > cur_time)
+                min_time = cur_time;
+            else if (max_time < cur_time)
+                max_time = cur_time;
 
-        memset(request_name, 0, PREFIX_MAX_LENGTH);
-        memset(request_prefix, 0, PREFIX_MAX_LENGTH);
+            memset(request_name, 0, PREFIX_MAX_LENGTH);
+            memset(request_prefix, 0, PREFIX_MAX_LENGTH);
+        }
     }
-
-    // // destroy them threads in them pool...
-    // assert(threadpool_destroy(pool, 0) == 0);
 
     printf("[rid fwd simulation]: done. looked up %ld requests: "\
         "\n\t[TOT_TIME]: %-.8f"\
@@ -478,9 +696,9 @@ int main(int argc, char **argv) {
     print_namespace_stats(url_sizes, max_prefix_size);
 
     printf("[rid fwd simulation]: simulation stats:\n");
-    pt_ht_print_stats(pt_fib);
+    pt_ht_print_stats(pt_fib, output_dir);
     pt_ht_erase(pt_fib);
-    print_tp_cond(tp_cond);
+    print_tp_cond(tp_cond, output_dir);
 
     // struct lookup_stats * itr;
 
@@ -489,9 +707,8 @@ int main(int argc, char **argv) {
     //     HASH_DEL(pt_stats_ht, itr);
     // }
 
-    fclose(fr);
-
     // strings
+    free(prefix);
     free(request_name);
     // click_xia_xid structs
     free(request_rid);

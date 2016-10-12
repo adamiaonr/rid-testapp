@@ -35,6 +35,8 @@
 #include <assert.h>
 #include <pthread.h>
 
+#include <string>
+
 #include "uthash.h"
 // playing with fire... i mean threads now...
 #include "threadpool.h"
@@ -116,7 +118,7 @@ struct pt_fwd_lookup_tdata {
 };
 
 extern void pt_ht_erase(struct pt_ht * fib);
-extern void pt_ht_print_stats(struct pt_ht * fib);
+extern void pt_ht_print_stats(struct pt_ht * fib, std::string output_dir);
 extern struct pt_ht * pt_ht_search(struct pt_ht * ht, int prefix_size);
 extern int pt_ht_add(
         struct pt_ht ** ht,

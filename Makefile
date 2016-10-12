@@ -17,9 +17,9 @@ OBJECTS = $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
 # debuggin' options
 ifdef DEBUG
-CFLAGS += -g -ggdb
+CFLAGS += -g -ggdb -gdwarf-2 -Wall -Wno-comment -std=c++11
 else
-CFLAGS +=-O3
+CFLAGS +=-O3 -gdwarf-2 -Wall -Wno-comment -std=c++11
 endif
 
 # search for libs here
@@ -33,13 +33,17 @@ all: $(TARGET)
 	mkdir -p $(BINDIR)
 	mv $(TARGET) $(BINDIR)
 
-$(TARGET): $(OBJECTS)
+$(TARGET): $(BUILDDIR)/argvparser.o $(OBJECTS)
 	@echo " Linking..."
 	@echo " $(CC) -o $@ $^ $(LDFLAGS) $(LIB)"; $(CC) -o $@ $^ $(LDFLAGS) $(LIB)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	make -C lib/libbloom
 	make -C lib/threadpool
+	@mkdir -p $(BUILDDIR)
+	@echo "$(CC) $(CFLAGS) $(INC) -c $< -o $@"; $(CC) $(CFLAGS) $(INC) -c $< -o $@
+
+$(BUILDDIR)/argvparser.o: $(SRCDIR)/argvparser.cpp
 	@mkdir -p $(BUILDDIR)
 	@echo "$(CC) $(CFLAGS) $(INC) -c $< -o $@"; $(CC) $(CFLAGS) $(INC) -c $< -o $@
 	

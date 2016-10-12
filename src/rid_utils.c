@@ -21,6 +21,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * limitations under the License.
  */
+#include <algorithm>
+#include <string>
 
 #include "rid_utils.h"
 

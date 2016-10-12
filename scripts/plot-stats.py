@@ -1,298 +1,185 @@
+import pandas as pd
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+import os
+import argparse
+import sys
+import glob
+
 from datetime import date
 from datetime import datetime
-import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
-from matplotlib.pyplot import figure, show
-from matplotlib import *
-import matplotlib
-import time
-import sys
-import os
-import numpy as np
-import collections
-import math
+from collections import defaultdict
+from collections import OrderedDict
 
-# in honor of "stack'd", the pittsburgh restaurant next to my shadyside 
-# place
+matplotlib.rcParams.update({'font.size': 18})
 
-LABEL_FONT_SIZE=12
-LEGEND_FONT_SIZE=10  
-BF_MAX_SIZE=15
-BAR_WIDTH=1.0
-
-# pre-determined input file names
-file_names = ['entry.dat', 'gen-stats.dat', 'req-entry-diff.dat', 'tp-size.dat']
-
-def custom_ceil(x, base=5):
-#    return int(base * math.ceil(float(x)/base))
-    return math.ceil(float(x)) + 1
-
-def main():
-
-    if len(sys.argv) < 2:
-        print "usage: python plot-stats.py <input-file-dir> <output-file-dir>"
-        return
-
-    # keep track of reading time... for research purposes of course
-    start_time = time.time()
-    # fetch the dir where the .dat files are
-    input_file_dir = sys.argv[1]
-
-    # add a placeholder for each possible |F|, |F\R| or |TP|
-    _entry_data = []
-    _gen_stats_data = []
-    _req_entry_diff_data = []
-    _tp_size_data = []
-
-    for i in xrange(BF_MAX_SIZE + 1):
-        _entry_data.append([])
-        _gen_stats_data.append([])
-        _req_entry_diff_data.append([])
-        _tp_size_data.append([])
-
-    # read each .dat file in input_file_dir
-    for file_name in file_names:
-
-        _file = open(input_file_dir + "/" + file_name, 'rb')
-
-        for line in _file.readlines():
-            line_splitted = line.split(",") 
-
-            try:
-
-                index = int(line_splitted[0])
-
-                if (file_name == 'entry.dat'):
-                    _entry_data[index].append([int(line_splitted[1]), float(line_splitted[2])])
-                elif (file_name == 'gen-stats.dat'):
-                    _gen_stats_data[index].append([int(line_splitted[1]), int(line_splitted[2]), int(line_splitted[3]), int(line_splitted[4])])
-                elif (file_name == 'req-entry-diff.dat'):
-                    _req_entry_diff_data[index].append([int(line_splitted[1]), int(line_splitted[2])])
-                elif (file_name == 'tp-size.dat'):
-                    # also include the nr. of TPs in _tp_size_data
-                    _tp_size_data[index].append([_gen_stats_data[index][0][1], int(line_splitted[1]), int(line_splitted[2])])                    
-                else:
-                    print "ERROR : unknown input file name : " + str(file_name)
-            
-            except IndexError:
+FONTSIZE_LEGEND = 14
 
-                print "index : " + str(index)
-                print "file name : " + str(file_name)
-                print "line : " + line
+def extract_data(data_dir):
 
-                return
+    data = defaultdict(OrderedDict)
 
-    elapsed_time = time.time() - start_time
-    print "[READ FILES IN " + str(elapsed_time) + " sec]"
+    for file_name in sorted(glob.glob(os.path.join(data_dir, '*.tsv'))):
 
-    # now lets generate a 2 x 2 plot, i.e. with 4 subplots, one for each data series
-    fig = plt.figure()
+        file_type = file_name.split(".")[0].split("/")[-1]
+        file_label = file_name.split(".")[1]
 
-    subplot_code = (2 * 100) + (2 * 10)
+        print("type = %s, label = %s" % (file_type, file_label))
 
-    x = np.arange(15)
-    _x = np.arange(0, 15, 2)
+        data[file_type][file_label] = pd.read_csv(file_name, sep = "\t")
+        data[file_type][file_label] = data[file_type][file_label].convert_objects(convert_numeric = True)
 
-    y = []
+    return data
 
-    # onto the graphing...
+def plot_tp_sizes(data):    
 
-    # ************************
-    # |F| distr.
-    # ************************
+    entry_sizes = defaultdict(list)
+    tp_sizes    = defaultdict(defaultdict)
+    fp_totals   = defaultdict(int)
 
-    subplot_code += 1
-    _entry_plot = fig.add_subplot(subplot_code)
-    _entry_plot.set_title("# Entries per entry size |F|", fontsize=LABEL_FONT_SIZE)
+    entry_size_labels = ['$|F|_{min} = 1$', '$|F|_{min} = 3$']
+    entry_size_colors = ['#bebebe', '#000000']
+    tp_size_labels = ['$|F|_{min} = 1$, $|F|=|TP|$', '$|F|_{min} = 1$, $|F|>|TP|$', '$|F|_{min} = 3$, $|F|=|TP|$', '$|F|_{min} = 3$, $|F|>|TP|$']
+    tp_size_colors = ['grey', '#000000']
+    tp_size_styles = ['-', '', '-', '']
+    tp_size_markers = ['v', 's', 'o', '^']
+    tp_size_markrs_size = [10, 10, 8, 10]
 
-    for i in xrange(BF_MAX_SIZE):
-        y.append(_entry_data[i + 1][0][0])
+    for value_type in data:
 
-    _entry_plot.grid(True)
-    _entry_plot.bar(x - (BAR_WIDTH / 2.0), y, BAR_WIDTH, color='blue')
+        for f_min in data[value_type]:
 
-    _entry_plot.set_xlabel("Entry size |F|", fontsize=LABEL_FONT_SIZE)
-    _entry_plot.set_ylabel('# of entries', fontsize=LABEL_FONT_SIZE)
+            f = int(f_min.lstrip("f").lstrip("0"))
 
-    # x axis is the most complicated
-    _entry_plot.set_xlim(min(x) - 1, max(x) + 1)
-    _entry_plot.set_xticks(_x)
-    _entry_plot.set_xticklabels(_x + 1)
-    x_labels = _entry_plot.get_xticklabels()
-    plt.setp(x_labels, rotation=0, fontsize=LABEL_FONT_SIZE)
+            if value_type == "entry":
 
-    # set y axis limits after drawing the rest of the graph
-    _log_max_y = int(math.log10(max(y)))
-    _ceil_max_y = math.ceil(max(y) / math.pow(10, int(math.log10(max(y)))))
-    _ceil_max_y = _ceil_max_y * math.pow(10, _log_max_y)
+                entry_sizes[f] = data[value_type][f_min]["NUM_ENTRIES"].tolist()
 
-    _entry_plot.set_ylim(0, _ceil_max_y)
-    y_ticks = np.arange(0, _ceil_max_y + 1, _ceil_max_y / 5)
-    _entry_plot.set_yticks(y_ticks)
+                print(value_type)
+                print(f_min)
+                print(entry_sizes[f])
 
-    y_ticks_labels = []
-    y_ticks_labels.append('0')
-    for i in xrange(1, len(y_ticks)):
-        y_ticks_labels.append(str(int(y_ticks[i] / 1000)) + "k")
-    _entry_plot.set_yticklabels(y_ticks_labels)
-    y_labels = _entry_plot.get_yticklabels()
-    plt.setp(y_labels, rotation=0, fontsize=LABEL_FONT_SIZE)
+            elif value_type == "tp-size":
 
-    # ************************
-    # GENERAL STATS
-    # ************************
+                print(value_type)
+                print(f_min)
 
-    subplot_code += 1
-    _gen_stats_plot = fig.add_subplot(subplot_code)
-    _gen_stats_plot.set_title('# FPs, # TPs and # TNs per entry size', fontsize=LABEL_FONT_SIZE)
+                tp_sizes[f]["FP_EQUAL"] = data[value_type][f_min]["FP_EQUAL"].tolist()
+                tp_sizes[f]["FP_LARGER"] = data[value_type][f_min]["FP_LARGER"].tolist()
+                fp_totals[f] = sum(tp_sizes[f]["FP_EQUAL"]) + sum(tp_sizes[f]["FP_LARGER"])
 
-    y_max = 0
+                print(tp_sizes[f]["FP_EQUAL"])
+                print(tp_sizes[f]["FP_LARGER"])
+                print(fp_totals[f])
 
-    y = []
-    for i in xrange(BF_MAX_SIZE):
-        y.append(_gen_stats_data[i + 1][0][0])
+    # #matplotlib.style.use('ggplot')
+    fig = plt.figure(figsize=(10,4))
+    # 2 subplots : entry size distribution (left), tp sizes (right)
+    ax1 = fig.add_subplot(121)
+    ax1.grid(True)
 
-    if max(y) > y_max:
-        y_max = max(y)
+    bar_group_size = len(entry_size_labels)
+    bar_group_num = 15
 
-    a = _gen_stats_plot.plot(x, y, '-v', linewidth=2, color='red')
+    # assumes the inter bar group space is 0 bar. also, for n bar groups 
+    # we have n - 1 inter bar group spaces
+    m = -(float(bar_group_num * bar_group_size) / 2.0)
+    bar_width = 0.50
 
-    y = []
-    for i in xrange(BF_MAX_SIZE):
-        y.append(_gen_stats_data[i + 1][0][1])
+    x_min = 0.0
 
-    if max(y) > y_max:
-        y_max = max(y)
+    bar_group_offset = np.arange(1, (2 * 15), step = 2)[0] + (m * bar_width)
+    bar_group_width = (bar_group_num * bar_group_size + 1) * bar_width
 
-    b = _gen_stats_plot.plot(x, y, '-o', linewidth=2, color='green')
+    x_max = np.arange(1, (2 * 15), step = 2)[0] + (m * bar_width)
+    x_max += np.arange(1, (2 * 15), step = 2)[-1] + ((bar_group_num * bar_group_size + 1) / 2.0) * bar_width
 
-    y = []
-    for i in xrange(BF_MAX_SIZE):
-        y.append(_gen_stats_data[i + 1][0][2])
+    print(bar_group_size)
+    print(bar_group_num)
+    print(bar_group_offset)
+    print(bar_group_width)
+    print("[%d, %d]" % (x_min, x_max))
 
-    if max(y) > y_max:
-        y_max = max(y)
+    # print the bars for each |L|, for both cache distances
+    for k, v in {0:1, 1:3}.iteritems():
 
-    c = _gen_stats_plot.plot(x, y, '-^', linewidth=2, color='blue')
+        ax1.bar(np.arange(1, (15 + 1), step = 1) + (m * bar_width), np.array(entry_sizes[v]), color = entry_size_colors[k], linewidth = 1.5, alpha = 0.75, width = bar_width, label = entry_size_labels[k])
+        m += 1.0
 
-    _gen_stats_plot.set_xlabel("Entry size |F|", fontsize=LABEL_FONT_SIZE)
-    _gen_stats_plot.set_ylabel('# of events', fontsize=LABEL_FONT_SIZE)
-
-    _gen_stats_plot.set_xlim(min(x) - 1, max(x) + 1)
-    _gen_stats_plot.set_xticks(_x)
-    _gen_stats_plot.set_xticklabels(_x + 1)
-    x_labels = _gen_stats_plot.get_xticklabels()
-    plt.setp(x_labels, rotation=0, fontsize=LABEL_FONT_SIZE)
-
-    # set y axis limits after drawing the rest of the graph
-    _log_max_y = int(math.ceil(math.log10(y_max)))
-    _ceil_max_y = math.pow(10, _log_max_y)
-
-    _gen_stats_plot.set_yscale('log')
-    _gen_stats_plot.set_ylim(0, _ceil_max_y)
-    y_labels = _gen_stats_plot.get_yticklabels()
-    plt.setp(y_labels, rotation=0, fontsize=LABEL_FONT_SIZE)
-
-    _gen_stats_plot.legend((a[0], b[0], c[0]), ('#FPs', '#TPs', '#TNs'), loc='center right', fontsize=LEGEND_FONT_SIZE)
-
-    # ************************
-    # REQ. ENTRY DIFF |F\R|
-    # ************************
-
-    subplot_code += 1
-    _req_entry_diff_plot = fig.add_subplot(subplot_code)
-    _req_entry_diff_plot.set_title('# FPs per req.-entry diff. |F\R|', fontsize=LABEL_FONT_SIZE)
-
-    y_max = 0
-
-    y = []
-    for i in xrange(BF_MAX_SIZE):
-        y.append(_req_entry_diff_data[i + 1][0][0])
-
-    if max(y) > y_max:
-        y_max = max(y)
-
-    a = _req_entry_diff_plot.plot(x, y, '-v', linewidth=2, color='red')
-
-    _req_entry_diff_plot.set_xlabel("Request-Entry diff. |F\R|", fontsize=LABEL_FONT_SIZE)
-    _req_entry_diff_plot.set_ylabel('# FPs', fontsize=LABEL_FONT_SIZE)
-
-    _req_entry_diff_plot.set_xlim(min(x) - 1, max(x) + 1)
-    _req_entry_diff_plot.set_xticks(_x)
-    _req_entry_diff_plot.set_xticklabels(_x + 1)
-    x_labels = _req_entry_diff_plot.get_xticklabels()
-    plt.setp(x_labels, rotation=0, fontsize=LABEL_FONT_SIZE)
-
-    # set y axis limits after drawing the rest of the graph
-    _log_max_y = int(math.ceil(math.log10(y_max)))
-    _ceil_max_y = math.pow(10, _log_max_y)
-
-    _req_entry_diff_plot.set_yscale('log')
-    _req_entry_diff_plot.set_ylim(0, _ceil_max_y)
-    y_labels = _req_entry_diff_plot.get_yticklabels()
-    plt.setp(y_labels, rotation=0, fontsize=LABEL_FONT_SIZE)
-
-    #_req_entry_diff_plot.legend((a[0]), ('#FPs'), loc='lower right', fontsize=LEGEND_FONT_SIZE)
-
-    # ************************
-    # TP SIZES
-    # ************************
-
-    subplot_code += 1
-    _tp_size_plot = fig.add_subplot(subplot_code)
-    _tp_size_plot.set_title('# FPs larger/equal than TP size', fontsize=LABEL_FONT_SIZE)
-
-    y_max = 0
-
-    y = []
-    for i in xrange(BF_MAX_SIZE):
-        y.append(_tp_size_data[i + 1][0][0])
-
-    if max(y) > y_max:
-        y_max = max(y)
-
-    a = _tp_size_plot.plot(x, y, '-o', linewidth=2, color='green')
-
-    y = []
-    for i in xrange(BF_MAX_SIZE):
-        y.append(_tp_size_data[i + 1][0][1])
-
-    if max(y) > y_max:
-        y_max = max(y)
-
-    b = _tp_size_plot.plot(x, y, '-v', linewidth=2, color='red')
-
-    y = []
-    for i in xrange(BF_MAX_SIZE):
-        y.append(_tp_size_data[i + 1][0][2])
-
-    if max(y) > y_max:
-        y_max = max(y)
-
-    c = _tp_size_plot.plot(x, y, '-^', linewidth=2, color='orange')
-
-    _tp_size_plot.set_xlabel("True positive size |TP|", fontsize=LABEL_FONT_SIZE)
-    _tp_size_plot.set_ylabel('# of events', fontsize=LABEL_FONT_SIZE)
-
-    _tp_size_plot.set_xlim(min(x) - 1, max(x) + 1)
-    _tp_size_plot.set_xticks(_x)
-    _tp_size_plot.set_xticklabels(_x + 1)
-    x_labels = _tp_size_plot.get_xticklabels()
-    plt.setp(x_labels, rotation=0, fontsize=LABEL_FONT_SIZE)
-
-    # set y axis limits after drawing the rest of the graph
-    _log_max_y = int(math.ceil(math.log10(y_max)))
-    _ceil_max_y = math.pow(10, _log_max_y)
-
-    _tp_size_plot.set_yscale('log')
-    _tp_size_plot.set_ylim(0, _ceil_max_y)
-    y_labels = _tp_size_plot.get_yticklabels()
-    plt.setp(y_labels, rotation=0, fontsize=LABEL_FONT_SIZE)
-
-    _tp_size_plot.legend((a[0], b[0], c[0]), ('#TPs', '#FPs : |FP|=|TP|', '#FPs : |FP|>=|TP|'), loc='upper right', fontsize=LEGEND_FONT_SIZE)
-
-    plt.tight_layout(pad=0.4, w_pad=1.0, h_pad=1.0)
-    plt.savefig(sys.argv[2] + "/stats.png", bbox_inches='tight')
+    ax1.set_yscale('log')
+    ax1.set_xlim(-7.0, 9)
+    ax1.set_ylim(1.0, 100000000)
+
+    ax1.set_xlabel("Entry size |F|")
+    ax1.set_ylabel("Nr. of fwd. entries")
+    ax1.set_xticks(np.arange(-6, 8 + 1, step = 2))
+    ax1.set_xticklabels(['1', '3', '5', '7', '9', '11', '13', '15'])
+    ax1.set_yticks([1.0, 100, 10000, 1000000, 100000000])
+    ax1.legend(fontsize=FONTSIZE_LEGEND, ncol=1, loc='upper right')
+
+    # 2 subplots : entry size distribution (left), tp sizes (right)
+    ax2 = fig.add_subplot(122)
+    ax2.grid(True)
+
+    # print the bars for each |L|, for both cache distances
+    l = 0
+    for k, v in {0:1, 1:3}.iteritems():
+        for tp_type in tp_sizes[v]:
+
+            ax2.plot(np.arange(1 + (v - 1), (15 + 1), step = 1), np.array(tp_sizes[v][tp_type][(v-1):]), linewidth = 1.5, color = tp_size_colors[k], linestyle = tp_size_styles[l], marker = tp_size_markers[l], markersize = tp_size_markrs_size[l], label = tp_size_labels[l])
+            l += 1
+
+    ax2.set_ylim(0.1, 1000000)
+    ax2.set_yscale('log')
+
+    ax2.set_xlabel("True positive size |TP|")
+    ax2.set_ylabel("Nr. of FPs larger/equal to TP")
+    ax2.set_xticks(np.arange(1, 15 + 1, step = 2))
+    ax2.set_xticklabels(['1', '3', '5', '7', '9', '11', '13', '15'])
+    ax2.legend(fontsize=FONTSIZE_LEGEND, ncol=1, loc='upper right')
+
+    fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.3, hspace=None)
+
+    plt.savefig("fp-stats.pdf", bbox_inches='tight', format = 'pdf')
 
 if __name__ == "__main__":
-    main()
+
+    # use an ArgumentParser for a nice CLI
+    parser = argparse.ArgumentParser()
+
+    # options (self-explanatory)
+    parser.add_argument(
+        "--data-dir", 
+         help = """dir w/ .tsv files.""")
+    parser.add_argument(
+        "--output-dir", 
+         help = """dir on which to print graphs.""")
+    parser.add_argument(
+        "--case", 
+         help = """the case you want to output. e.g. 'base', 'bf-sizes', etc.""")
+    parser.add_argument(
+        "--subcase", 
+         help = """the sub-case you want to output. e.g. 'flood' or 'random' for 'base'.""")
+
+    args = parser.parse_args()
+
+    # quit if a dir w/ causality files hasn't been provided
+    if not args.data_dir:
+        sys.stderr.write("""%s: [ERROR] please supply a data dir!\n""" % sys.argv[0]) 
+        parser.print_help()
+        sys.exit(1)
+
+    # if an output dir is not specified, use data-dir
+    if not args.output_dir:
+        args.output_dir = args.data_dir
+
+    # extract the data from all files in the data dir
+    data = extract_data(args.data_dir)
+
+    if args.case == 'tp-sizes':
+        plot_tp_sizes(data)
+    else:
+        sys.stderr.write("""%s: [ERROR] please supply a valid case\n""" % sys.argv[0]) 
+        parser.print_help()
+        sys.exit(1)

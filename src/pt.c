@@ -162,7 +162,7 @@ void pt_ht_erase(struct pt_ht * fib) {
  *
  * \param   fib the FIB of which stats will be printed
  */
-void pt_ht_print_stats(struct pt_ht * fib) {
+void pt_ht_print_stats(struct pt_ht * fib, std::string output_dir) {
 
     // general fwd table stats
     uint32_t num_entries = 0, total_entries = 0, total_sizes = 0;
@@ -188,7 +188,10 @@ void pt_ht_print_stats(struct pt_ht * fib) {
     };
 
     // output files for each one of the tables
-    FILE * output_file = fopen(DEFAULT_ENTRY_FILE, "wb");
+    std::string filename = output_dir + std::string("/") + std::string(DEFAULT_ENTRY_FILE);
+    FILE * output_file = fopen(filename.c_str(), "wb");
+    // write the first line
+    fprintf(output_file, "PREFIX_SIZE\tNUM_ENTRIES\tFEA\n");
 
     // collect the stats (and print the fwd table stats while doing it)
     struct pt_ht * itr;
@@ -240,8 +243,8 @@ void pt_ht_print_stats(struct pt_ht * fib) {
             itr->fea);
 
         fprintf(output_file, 
-            "%d,%d,%-.6f\n", 
-            itr->prefix_size,
+            "%d\t%d\t%-.6f\n", 
+            itr->prefix_size, 
             itr->num_entries,
             itr->fea);
     }
@@ -265,7 +268,9 @@ void pt_ht_print_stats(struct pt_ht * fib) {
         "-------------------------------------------------------------------------------\n",
         "|F|", "# FPs", "# TPs", "# TNs", "# LOOKUPS");
 
-    output_file = fopen(DEFAULT_GEN_STATS_FILE, "wb");
+    filename = output_dir + std::string("/") + std::string(DEFAULT_GEN_STATS_FILE);
+    output_file = fopen(filename.c_str(), "wb");
+    fprintf(output_file, "PREFIX_SIZE\tFP_NUM\tTP_NUM\tTN_NUM\tLOOKUP_NUM\n");
 
     int _size = 1;
     for (_size; _size < MAX_PREFIX_SIZE + 1; _size++) {
@@ -280,7 +285,7 @@ void pt_ht_print_stats(struct pt_ht * fib) {
                     _size, fps_f[_size], tps_f[_size], tns_f[_size], gen_f[_size]);
 
         fprintf(output_file, 
-            "%d,%d,%d,%d,%d\n", 
+            "%d\t%d\t%d\t%d\t%d\n", 
             _size,
             fps_f[_size],
             tps_f[_size],
@@ -302,7 +307,9 @@ void pt_ht_print_stats(struct pt_ht * fib) {
         "-------------------------------------------------------------------------------\n",
         "REQ-ENTRY DIFF. |F\\R|", "# FPs", "# LOOKUPS");
 
-    output_file = fopen(DEFAULT_REQ_ENTRY_DIFF_FILE, "wb");
+    filename = output_dir + std::string("/") + std::string(DEFAULT_REQ_ENTRY_DIFF_FILE);
+    output_file = fopen(filename.c_str(), "wb");
+    fprintf(output_file, "F_R_DIFF\tFP_NUM\tLOOKUP_NUM\n");
 
     _size = 0; fps_total = 0; gen_total = 0;
 
@@ -316,7 +323,7 @@ void pt_ht_print_stats(struct pt_ht * fib) {
                     _size, fps_fr[_size], gen_fr[_size]);
 
         fprintf(output_file, 
-            "%d,%d,%d\n", 
+            "%d\t%d\t%d\n", 
             _size,
             fps_fr[_size],
             gen_fr[_size]);
@@ -779,6 +786,10 @@ int pt_fwd_lookup(
 
                 fps = 1;
                 matches += fps;
+
+                // if (_req_entry_diff == 3 && (strlen(node->prefix_i->prefix) > 0))
+                //     printf("pt_fwd_lookup(): |F\\R| = %d for %s (R) vs. %s (F)\n", 
+                //         _req_entry_diff, request, node->prefix_i->prefix);
             }
 
         } else {

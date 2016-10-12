@@ -43,10 +43,10 @@
 #define PREFIX_MAX_COUNT            256
 #define PREFIX_MAX_LENGTH           256
 
-#define DEFAULT_ENTRY_FILE              "test/entry.dat"
-#define DEFAULT_GEN_STATS_FILE          "test/gen-stats.dat"
-#define DEFAULT_REQ_ENTRY_DIFF_FILE     "test/req-entry-diff.dat"
-#define DEFAULT_TP_SIZE_FILE            "test/tp-size.dat"
+#define DEFAULT_ENTRY_FILE              "entry.tsv"
+#define DEFAULT_GEN_STATS_FILE          "gen-stats.tsv"
+#define DEFAULT_REQ_ENTRY_DIFF_FILE     "req-entry-diff.tsv"
+#define DEFAULT_TP_SIZE_FILE            "tp-size.tsv"
 
 #define MAX_PREFIX_SIZE             15
 
