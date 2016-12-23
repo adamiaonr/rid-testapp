@@ -38,7 +38,7 @@ def plot_tp_sizes(data):
     tp_sizes    = defaultdict(defaultdict)
     fp_totals   = defaultdict(int)
 
-    entry_size_labels = ['$|F|_{min} = 1$', '$|F|_{min} = 3$']
+    entry_size_labels = ['$10^6$ entries, $|F|_{min} = 1$', '$3\,10^6$ entries, $|F|_{min} = 3$']
     entry_size_colors = ['#bebebe', '#000000']
     tp_size_labels = ['$|F|_{min} = 1$, $|F|=|TP|$', '$|F|_{min} = 1$, $|F|>|TP|$', '$|F|_{min} = 3$, $|F|=|TP|$', '$|F|_{min} = 3$, $|F|>|TP|$']
     tp_size_colors = ['grey', '#000000']
@@ -107,9 +107,10 @@ def plot_tp_sizes(data):
         ax1.bar(np.arange(1, (15 + 1), step = 1) + (m * bar_width), np.array(entry_sizes[v]), color = entry_size_colors[k], linewidth = 1.5, alpha = 0.75, width = bar_width, label = entry_size_labels[k])
         m += 1.0
 
+    ax1.set_title("(a)")
     ax1.set_yscale('log')
     ax1.set_xlim(-7.0, 9)
-    ax1.set_ylim(1.0, 100000000)
+    ax1.set_ylim(1.0, 1000000000)
 
     ax1.set_xlabel("Entry size |F|")
     ax1.set_ylabel("Nr. of fwd. entries")
@@ -130,6 +131,7 @@ def plot_tp_sizes(data):
             ax2.plot(np.arange(1 + (v - 1), (15 + 1), step = 1), np.array(tp_sizes[v][tp_type][(v-1):]), linewidth = 1.5, color = tp_size_colors[k], linestyle = tp_size_styles[l], marker = tp_size_markers[l], markersize = tp_size_markrs_size[l], label = tp_size_labels[l])
             l += 1
 
+    ax2.set_title("(b)")
     ax2.set_ylim(0.1, 1000000)
     ax2.set_yscale('log')
 

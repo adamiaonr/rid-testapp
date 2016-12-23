@@ -4,6 +4,186 @@
 		"selected_items":
 		[
 			[
+				"tp_s",
+				"tp_size_markrs_size"
+			],
+			[
+				"tp_si",
+				"tp_size_markers"
+			],
+			[
+				"tp_",
+				"tp_size_colors"
+			],
+			[
+				"set",
+				"set_yticklabels"
+			],
+			[
+				"set_x",
+				"set_xticks"
+			],
+			[
+				"ent",
+				"entry_size_colors"
+			],
+			[
+				"entr",
+				"entry_size_labels"
+			],
+			[
+				"def",
+				"defaultdict"
+			],
+			[
+				"to",
+				"tolist"
+			],
+			[
+				"val",
+				"value_type"
+			],
+			[
+				"de",
+				"defaultdict"
+			],
+			[
+				"outp",
+				"output_dir"
+			],
+			[
+				"out",
+				"output_dir"
+			],
+			[
+				"fil",
+				"filename"
+			],
+			[
+				"ou",
+				"output_dir"
+			],
+			[
+				"st",
+				"string"
+			],
+			[
+				"std",
+				"std"
+			],
+			[
+				"OP",
+				"OPTION_OUTPUT_DIR"
+			],
+			[
+				"oup",
+				"output-dir"
+			],
+			[
+				"re",
+				"return"
+			],
+			[
+				"ran",
+				"random"
+			],
+			[
+				"proba",
+				"probability"
+			],
+			[
+				"request_",
+				"request_prefixes_num"
+			],
+			[
+				"p_",
+				"p_size"
+			],
+			[
+				"pre",
+				"prefix"
+			],
+			[
+				"requ",
+				"request"
+			],
+			[
+				"table",
+				"table-size"
+			],
+			[
+				"OPT",
+				"OPTION_TABLE_SIZE"
+			],
+			[
+				"TA",
+				"TABLE_SIZE_LIMIT"
+			],
+			[
+				"PRE",
+				"PREFIX_MAX_LENGTH"
+			],
+			[
+				"strcp",
+				"strncpy"
+			],
+			[
+				"it",
+				"itr"
+			],
+			[
+				"req",
+				"request_prefix"
+			],
+			[
+				"MAX",
+				"MAX_PREFIX_SIZE"
+			],
+			[
+				"RE",
+				"REQUEST_LIMIT"
+			],
+			[
+				"cha",
+				"character"
+			],
+			[
+				"SU",
+				"SUFFIXES_SIZE"
+			],
+			[
+				"num",
+				"num_prefixes"
+			],
+			[
+				"suff",
+				"suffix_list"
+			],
+			[
+				"pr",
+				"prefix"
+			],
+			[
+				"min_",
+				"min_prefix_size"
+			],
+			[
+				"reque",
+				"request"
+			],
+			[
+				"str",
+				"string"
+			],
+			[
+				"OPI",
+				"OPTION_MIN_PREFIX_SIZE"
+			],
+			[
+				"tab",
+				"table_offset"
+			],
+			[
 				"f_",
 				"f_pmf_prob"
 			],
@@ -44,14 +224,6 @@
 				"scn_parser"
 			],
 			[
-				"ou",
-				"outcomes"
-			],
-			[
-				"out",
-				"outcome"
-			],
-			[
 				"scen",
 				"scenario_code"
 			],
@@ -68,24 +240,12 @@
 				"input_file_dir"
 			],
 			[
-				"pr",
-				"print"
-			],
-			[
-				"fil",
-				"files"
-			],
-			[
 				"ifa",
 				"iface"
 			],
 			[
 				"ui",
 				"uint32_t"
-			],
-			[
-				"MAX",
-				"MAX_PATH_STATE_STRING_SIZE"
 			],
 			[
 				"OU",
@@ -128,10 +288,6 @@
 				"iface_proportion"
 			],
 			[
-				"pre",
-				"prev_width"
-			],
-			[
 				"ac",
 				"access_tree"
 			],
@@ -152,16 +308,8 @@
 				"tp_sizes"
 			],
 			[
-				"tp_",
-				"tp_sizes_size"
-			],
-			[
 				"IF",
 				"IFACE_ENTRY_PROPORTION"
-			],
-			[
-				"re",
-				"return"
 			],
 			[
 				"inc",
@@ -174,10 +322,6 @@
 			[
 				"F",
 				"F_PROPORTION"
-			],
-			[
-				"req",
-				"request_size"
 			],
 			[
 				"FWD_TABLE",
@@ -208,10 +352,6 @@
 				"OUTCOME_UNDEF"
 			],
 			[
-				"de",
-				"define"
-			],
-			[
 				"rou",
 				"router_next_hop"
 			],
@@ -226,10 +366,6 @@
 			[
 				"ing",
 				"ingress_iface"
-			],
-			[
-				"def",
-				"default"
 			],
 			[
 				"IFAC",
@@ -336,16 +472,8 @@
 				"curr_i"
 			],
 			[
-				"to",
-				"total"
-			],
-			[
 				"lpm",
 				"lpm_pmf_cached"
-			],
-			[
-				"set",
-				"set_lpm_pmf"
 			],
 			[
 				"i",
@@ -386,139 +514,91 @@
 			[
 				"ma",
 				"max_tp_iface"
-			],
-			[
-				"max",
-				"max_tp_size"
-			],
-			[
-				"fp",
-				"fp_rate"
-			],
-			[
-				"LO",
-				"LOCAL_IFACE"
-			],
-			[
-				"rr",
-				"rr_fwd_table_row"
-			],
-			[
-				"do",
-				"double"
-			],
-			[
-				"fo",
-				"forward"
-			],
-			[
-				"str",
-				"struct	struct"
-			],
-			[
-				"tr",
-				"truth_table"
-			],
-			[
-				"m",
-				"max_iface"
-			],
-			[
-				"dec",
-				"decision_type"
-			],
-			[
-				"table",
-				"table_size"
-			],
-			[
-				"wi",
-				"width"
-			],
-			[
-				"I",
-				"IfaceType"
-			],
-			[
-				"prev_node_",
-				"prev_node_hops"
-			],
-			[
-				"sta",
-				"stackd"
-			],
-			[
-				"ar",
-				"arange"
-			],
-			[
-				"p",
-				"pink"
-			],
-			[
-				"li",
-				"lightgreen"
-			],
-			[
-				"fig",
-				"figure"
-			],
-			[
-				"pl",
-				"plt"
-			],
-			[
-				"y",
-				"y_stack"
-			],
-			[
-				"x_",
-				"x_labels_str"
-			],
-			[
-				"_x",
-				"_x_10"
-			],
-			[
-				"x_p",
-				"x_param_str"
-			],
-			[
-				"outc",
-				"outcome"
-			],
-			[
-				"spl",
-				"splitted"
-			],
-			[
-				"sp",
-				"splitted"
-			],
-			[
-				"line",
-				"line_splitted"
-			],
-			[
-				"a",
-				"alpha"
-			],
-			[
-				"ti",
-				"tier_depth"
-			],
-			[
-				"al",
-				"alpha_size"
-			],
-			[
-				"single",
-				"single"
 			]
 		]
 	},
 	"buffers":
 	[
+		{
+			"file": "src/rid_fwd.c",
+			"settings":
+			{
+				"buffer_size": 24502,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/adamiaonr/workbench/papers/rids/Makefile",
+			"settings":
+			{
+				"buffer_size": 2284,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/lookup_stats.c",
+			"settings":
+			{
+				"buffer_size": 4431,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/pt.c",
+			"settings":
+			{
+				"buffer_size": 31199,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "include/pt.h",
+			"settings":
+			{
+				"buffer_size": 3271,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "include/rid_utils.h",
+			"settings":
+			{
+				"buffer_size": 2357,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/rid_utils.c",
+			"settings":
+			{
+				"buffer_size": 7802,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "Makefile",
+			"settings":
+			{
+				"buffer_size": 1487,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "scripts/plot-stats.py",
+			"settings":
+			{
+				"buffer_size": 6380,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test/f-min/entry.f03.tsv",
+			"settings":
+			{
+				"buffer_size": 287,
+				"line_ending": "Unix"
+			}
+		}
 	],
 	"build_system": "",
 	"command_palette":
@@ -560,6 +640,7 @@
 	},
 	"file_history":
 	[
+		"/home/adamiaonr/workbench/rid-analytics/Makefile",
 		"/Users/adamiaonr/workbench/rid-analytics/test/configs/sanity.scn",
 		"/Users/adamiaonr/workbench/rid-analytics/Makefile",
 		"/Users/adamiaonr/workbench/rid-analytics/include/dataparser.h",
@@ -686,8 +767,7 @@
 		"/home/adamiaonr/Workbench/papers/qualifier-2015/conclusions.tex",
 		"/home/adamiaonr/Downloads/conclusions",
 		"/home/adamiaonr/Workbench/papers/qualifier-2015/challenges.tex",
-		"/home/adamiaonr/Dropbox/Workbench/PhD/individual topics/cv/research-statement/cover-letter.txt",
-		"/home/adamiaonr/Dropbox/Workbench/PhD/individual topics/cv/research-statement/statement.tex"
+		"/home/adamiaonr/Dropbox/Workbench/PhD/individual topics/cv/research-statement/cover-letter.txt"
 	],
 	"find":
 	{
@@ -707,6 +787,31 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"update_tp_cond",
+			"print_tp_cond",
+			"_req_entry_diff",
+			"req_entry_diff(",
+			"lookup_stats_update",
+			"req_entry_diffs_fps",
+			"count_prefixes",
+			"BF_MAX_ELEMENTS",
+			"generate_request_name",
+			"SIZE_L",
+			"file",
+			"prefix_le",
+			"prefix_info_init",
+			"lookup_stats_init",
+			"prefix",
+			"MIN_P",
+			"added %d prefixes",
+			"SUFFIXES",
+			"name_to_rid",
+			"OPTION_TABLE_OFFSET",
+			"REQUEST_LIMIT",
+			"MIN_PREFIX_SIZE",
+			"MIN",
+			"pt_fwd_lookup_thread",
+			"thread",
 			"get_f_pmf",
 			"24031E",
 			"x_descr",
@@ -809,32 +914,7 @@
 			"prob_iface_f",
 			"iface_pmf",
 			"protected",
-			"double",
-			"__float128",
-			"lookup(",
-			"line",
-			"stackd",
-			"plt.figure()",
-			"cyan",
-			"pow",
-			"))))\n",
-			"0",
-			"OUTCOME_DR",
-			"line_splitted",
-			" + x_param",
-			"OUTCOME_DROPPED",
-			"mhd_node->set_latency_val",
-			"OUTCOME_DROPPED",
-			"OUTCOME_DR",
-			"FIXME #3",
-			"*** next tier ***",
-			"*** probabilities ***",
-			"// *** latencies *** ",
-			"// *** LATENCIES *** ",
-			"BAR_WIDTH",
-			"y_max",
-			"title",
-			"outcomes_str"
+			"double"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -842,6 +922,7 @@
 		"regex": false,
 		"replace_history":
 		[
+			"OPTION_MIN_ENTRY_SIZE",
 			"dim",
 			"_offset",
 			"_offset_x",
@@ -968,8 +1049,7 @@
 			"payload",
 			"cid_push_payload",
 			"rid_local_addr",
-			"x_sock",
-			"listen_sock"
+			"x_sock"
 		],
 		"reverse": false,
 		"show_context": true,
@@ -980,8 +1060,294 @@
 	"groups":
 	[
 		{
+			"selected": 8,
 			"sheets":
 			[
+				{
+					"buffer": 0,
+					"file": "src/rid_fwd.c",
+					"settings":
+					{
+						"buffer_size": 24502,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								14667,
+								14667
+							]
+						],
+						"settings":
+						{
+							"rulers":
+							[
+								80
+							],
+							"spell_check": true,
+							"syntax": "Packages/C++/C.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 4715.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "/home/adamiaonr/workbench/papers/rids/Makefile",
+					"settings":
+					{
+						"buffer_size": 2284,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2284,
+								2284
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Makefile/Makefile.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 180.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "src/lookup_stats.c",
+					"settings":
+					{
+						"buffer_size": 4431,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3214,
+								3214
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1610.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "src/pt.c",
+					"settings":
+					{
+						"buffer_size": 31199,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4568,
+								4568
+							]
+						],
+						"settings":
+						{
+							"rulers":
+							[
+								80
+							],
+							"syntax": "Packages/C++/C.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2420.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "include/pt.h",
+					"settings":
+					{
+						"buffer_size": 3271,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2766,
+								2766
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1260.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "include/rid_utils.h",
+					"settings":
+					{
+						"buffer_size": 2357,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1357,
+								1357
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 270.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "src/rid_utils.c",
+					"settings":
+					{
+						"buffer_size": 7802,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6245,
+								6245
+							]
+						],
+						"settings":
+						{
+							"rulers":
+							[
+								80
+							],
+							"syntax": "Packages/C++/C.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3050.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "Makefile",
+					"settings":
+					{
+						"buffer_size": 1487,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1225,
+								1225
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Makefile/Makefile.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "scripts/plot-stats.py",
+					"settings":
+					{
+						"buffer_size": 6380,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4193,
+								4193
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1350.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "test/f-min/entry.f03.tsv",
+					"settings":
+					{
+						"buffer_size": 287,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								44,
+								44
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
 			]
 		}
 	],
@@ -1026,7 +1392,7 @@
 	},
 	"replace":
 	{
-		"height": 46.0
+		"height": 69.0
 	},
 	"save_all_on_build": true,
 	"select_file":
