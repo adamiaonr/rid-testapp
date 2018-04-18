@@ -8,8 +8,8 @@
 #ifndef _BLOOM_H
 #define _BLOOM_H
 
-#define BF_BIT_SIZE (int) 160
-#define BF_MAX_ELEMENTS (int) 15
+#define BF_BIT_SIZE (int) 192
+#define BF_MAX_ELEMENTS (int) 10
 
 /** ***************************************************************************
  * Structure to keep track of one bloom filter.  Caller needs to

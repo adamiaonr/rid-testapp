@@ -48,7 +48,7 @@
 #define DEFAULT_REQ_ENTRY_DIFF_FILE     "req-entry-diff.tsv"
 #define DEFAULT_TP_SIZE_FILE            "tp-size.tsv"
 
-#define MAX_PREFIX_SIZE             15
+#define MAX_PREFIX_SIZE             10
 
 struct click_xia_xid {
     uint32_t type;

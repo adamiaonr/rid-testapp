@@ -4,6 +4,34 @@
 		"selected_items":
 		[
 			[
+				"set_y",
+				"set_yticks"
+			],
+			[
+				"labe",
+				"labels"
+			],
+			[
+				"FP",
+				"FP_LARGER"
+			],
+			[
+				"FP_",
+				"FP_EQUAL"
+			],
+			[
+				"en",
+				"entry"
+			],
+			[
+				"ba",
+				"bar_width"
+			],
+			[
+				"pr",
+				"print"
+			],
+			[
 				"tp_s",
 				"tp_size_markrs_size"
 			],
@@ -158,10 +186,6 @@
 			[
 				"suff",
 				"suffix_list"
-			],
-			[
-				"pr",
-				"prefix"
 			],
 			[
 				"min_",
@@ -490,48 +514,24 @@
 			[
 				"log",
 				"log_prob"
-			],
-			[
-				"lo",
-				"log_prob"
-			],
-			[
-				"calc",
-				"calc_lpm_pmf"
-			],
-			[
-				"print",
-				"print_iface_pmf"
-			],
-			[
-				"P",
-				"Path_State"
-			],
-			[
-				"h",
-				"height"
-			],
-			[
-				"ma",
-				"max_tp_iface"
 			]
 		]
 	},
 	"buffers":
 	[
 		{
-			"file": "src/rid_fwd.c",
+			"file": "Makefile",
 			"settings":
 			{
-				"buffer_size": 24502,
+				"buffer_size": 1487,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/home/adamiaonr/workbench/papers/rids/Makefile",
+			"file": "src/rid_fwd.c",
 			"settings":
 			{
-				"buffer_size": 2284,
+				"buffer_size": 24502,
 				"line_ending": "Unix"
 			}
 		},
@@ -576,26 +576,42 @@
 			}
 		},
 		{
-			"file": "Makefile",
-			"settings":
-			{
-				"buffer_size": 1487,
-				"line_ending": "Unix"
-			}
-		},
-		{
 			"file": "scripts/plot-stats.py",
 			"settings":
 			{
-				"buffer_size": 6380,
+				"buffer_size": 6776,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "test/f-min/entry.f03.tsv",
+			"file": "/home/adamiaonr/workbench/wifi-vehicles/data-analysis/src/availability.py",
 			"settings":
 			{
-				"buffer_size": 287,
+				"buffer_size": 19582,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/home/adamiaonr/workbench/icn-2017/code/scripts/plot-fp-analysis.py",
+			"settings":
+			{
+				"buffer_size": 8563,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "lib/libbloom/bloom.h",
+			"settings":
+			{
+				"buffer_size": 3847,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "lib/libbloom/bloom.c",
+			"settings":
+			{
+				"buffer_size": 4788,
 				"line_ending": "Unix"
 			}
 		}
@@ -640,6 +656,9 @@
 	},
 	"file_history":
 	[
+		"/home/adamiaonr/workbench/rid-testapp/test/f-min/entry.f03.tsv",
+		"/home/adamiaonr/workbench/rid-testapp/README.md",
+		"/home/adamiaonr/workbench/papers/rids/Makefile",
 		"/home/adamiaonr/workbench/rid-analytics/Makefile",
 		"/Users/adamiaonr/workbench/rid-analytics/test/configs/sanity.scn",
 		"/Users/adamiaonr/workbench/rid-analytics/Makefile",
@@ -764,10 +783,7 @@
 		"/home/adamiaonr/Downloads/startbootstrap-freelancer-1.0.5/css/freelancer.css",
 		"/home/adamiaonr/Workbench/papers/hotnets-2015/sig-alternate.cls",
 		"/home/adamiaonr/Workbench/papers/hotnets-2015/introduction.tex",
-		"/home/adamiaonr/Workbench/papers/qualifier-2015/conclusions.tex",
-		"/home/adamiaonr/Downloads/conclusions",
-		"/home/adamiaonr/Workbench/papers/qualifier-2015/challenges.tex",
-		"/home/adamiaonr/Dropbox/Workbench/PhD/individual topics/cv/research-statement/cover-letter.txt"
+		"/home/adamiaonr/Workbench/papers/qualifier-2015/conclusions.tex"
 	],
 	"find":
 	{
@@ -787,6 +803,14 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"cdf",
+			"font",
+			"FONTSIZE_LEGEND",
+			"tps",
+			"PREFIX_MAX_LENGTH",
+			"tps",
+			"BF_BIT_SIZE",
+			"SUFFIXES_SIZE",
 			"update_tp_cond",
 			"print_tp_cond",
 			"_req_entry_diff",
@@ -906,15 +930,7 @@
 			"iface_pmf",
 			"set_iface_pmf",
 			"get_log_fp_rates",
-			"__float128",
-			"double",
-			"__float128",
-			"f_distribution",
-			"this",
-			"prob_iface_f",
-			"iface_pmf",
-			"protected",
-			"double"
+			"__float128"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -1060,11 +1076,37 @@
 	"groups":
 	[
 		{
-			"selected": 8,
+			"selected": 7,
 			"sheets":
 			[
 				{
 					"buffer": 0,
+					"file": "Makefile",
+					"settings":
+					{
+						"buffer_size": 1487,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1225,
+								1225
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Makefile/Makefile.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
 					"file": "src/rid_fwd.c",
 					"settings":
 					{
@@ -1075,8 +1117,8 @@
 						"selection":
 						[
 							[
-								14667,
-								14667
+								19608,
+								19608
 							]
 						],
 						"settings":
@@ -1091,33 +1133,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 4715.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "/home/adamiaonr/workbench/papers/rids/Makefile",
-					"settings":
-					{
-						"buffer_size": 2284,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								2284,
-								2284
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Makefile/Makefile.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 180.0,
+						"translation.y": 8051.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -1134,8 +1150,8 @@
 						"selection":
 						[
 							[
-								3214,
-								3214
+								194,
+								194
 							]
 						],
 						"settings":
@@ -1145,7 +1161,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1610.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -1162,8 +1178,8 @@
 						"selection":
 						[
 							[
-								4568,
-								4568
+								26468,
+								26468
 							]
 						],
 						"settings":
@@ -1177,7 +1193,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 2420.0,
+						"translation.y": 12203.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -1205,7 +1221,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1260.0,
+						"translation.y": 966.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -1222,8 +1238,8 @@
 						"selection":
 						[
 							[
-								1357,
-								1357
+								1578,
+								1578
 							]
 						],
 						"settings":
@@ -1263,51 +1279,25 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 3050.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 7,
-					"file": "Makefile",
-					"settings":
-					{
-						"buffer_size": 1487,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1225,
-								1225
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Makefile/Makefile.tmLanguage"
-						},
-						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
-					"buffer": 8,
+					"buffer": 7,
 					"file": "scripts/plot-stats.py",
 					"settings":
 					{
-						"buffer_size": 6380,
+						"buffer_size": 6776,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4193,
-								4193
+								6165,
+								6165
 							]
 						],
 						"settings":
@@ -1317,33 +1307,119 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1350.0,
+						"translation.y": 2262.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
-					"buffer": 9,
-					"file": "test/f-min/entry.f03.tsv",
+					"buffer": 8,
+					"file": "/home/adamiaonr/workbench/wifi-vehicles/data-analysis/src/availability.py",
 					"settings":
 					{
-						"buffer_size": 287,
+						"buffer_size": 19582,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								44,
-								44
+								12800,
+								12800
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Text/Plain text.tmLanguage"
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 4212.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "/home/adamiaonr/workbench/icn-2017/code/scripts/plot-fp-analysis.py",
+					"settings":
+					{
+						"buffer_size": 8563,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								7190,
+								7190
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1755.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "lib/libbloom/bloom.h",
+					"settings":
+					{
+						"buffer_size": 3847,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								183,
+								183
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "lib/libbloom/bloom.c",
+					"settings":
+					{
+						"buffer_size": 4788,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2415,
+								2415
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 322.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
