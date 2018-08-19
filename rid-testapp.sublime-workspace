@@ -4,6 +4,14 @@
 		"selected_items":
 		[
 			[
+				"ou",
+				"output_dir"
+			],
+			[
+				"OU",
+				"output_dir"
+			],
+			[
 				"set_y",
 				"set_yticks"
 			],
@@ -86,10 +94,6 @@
 			[
 				"fil",
 				"filename"
-			],
-			[
-				"ou",
-				"output_dir"
 			],
 			[
 				"st",
@@ -270,10 +274,6 @@
 			[
 				"ui",
 				"uint32_t"
-			],
-			[
-				"OU",
-				"OUTCOME_UNDEF"
 			],
 			[
 				"pat",
@@ -528,90 +528,66 @@
 			}
 		},
 		{
-			"file": "src/rid_fwd.c",
+			"file": "scripts/src/plot-stats.py",
 			"settings":
 			{
-				"buffer_size": 24502,
+				"buffer_size": 7600,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "src/lookup_stats.c",
+			"file": "scripts/src/plot-fp-analysis.py",
 			"settings":
 			{
-				"buffer_size": 4431,
+				"buffer_size": 9353,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "src/pt.c",
+			"file": "/home/adamiaonr/workbench/wifi-vehicles/data-analysis/src/trace-analysis.py",
 			"settings":
 			{
-				"buffer_size": 31199,
+				"buffer_size": 59629,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "include/pt.h",
+			"file": "/home/adamiaonr/workbench/rid-analytics/scripts/graphs/opportunistic.py",
 			"settings":
 			{
-				"buffer_size": 3271,
+				"buffer_size": 7760,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "include/rid_utils.h",
+			"file": "/home/adamiaonr/workbench/rid-analytics/scripts/graphs/event_breakdown.py",
 			"settings":
 			{
-				"buffer_size": 2357,
+				"buffer_size": 6521,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "src/rid_utils.c",
+			"file": "/home/adamiaonr/workbench/rid-analytics/scripts/graphs/cdn.py",
 			"settings":
 			{
-				"buffer_size": 7802,
+				"buffer_size": 50323,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "scripts/plot-stats.py",
+			"file": "test/entry.f01.tsv",
 			"settings":
 			{
-				"buffer_size": 6776,
+				"buffer_size": 205,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/home/adamiaonr/workbench/wifi-vehicles/data-analysis/src/availability.py",
+			"file": "test/tp-size.f01.tsv",
 			"settings":
 			{
-				"buffer_size": 19582,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/home/adamiaonr/workbench/icn-2017/code/scripts/plot-fp-analysis.py",
-			"settings":
-			{
-				"buffer_size": 8563,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "lib/libbloom/bloom.h",
-			"settings":
-			{
-				"buffer_size": 3847,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "lib/libbloom/bloom.c",
-			"settings":
-			{
-				"buffer_size": 4788,
+				"buffer_size": 112,
 				"line_ending": "Unix"
 			}
 		}
@@ -656,6 +632,22 @@
 	},
 	"file_history":
 	[
+		"/home/adamiaonr/workbench/rid-testapp/scripts/src/plot-fp-analysis.py",
+		"/home/adamiaonr/workbench/wifi-vehicles/data-analysis/src/trace-analysis.py",
+		"/home/adamiaonr/workbench/wifi-vehicles/data-analysis/src/mobility-analysis.py",
+		"/home/adamiaonr/workbench/rid-testapp/scripts/src/plot-collision.py",
+		"/home/adamiaonr/workbench/rid-testapp/src/rid_fwd.c",
+		"/home/adamiaonr/workbench/rid-testapp/src/lookup_stats.c",
+		"/home/adamiaonr/workbench/rid-testapp/src/pt.c",
+		"/home/adamiaonr/workbench/rid-testapp/include/pt.h",
+		"/home/adamiaonr/workbench/rid-testapp/include/rid_utils.h",
+		"/home/adamiaonr/workbench/rid-testapp/src/rid_utils.c",
+		"/home/adamiaonr/workbench/rid-testapp/scripts/plot-stats.py",
+		"/home/adamiaonr/workbench/wifi-vehicles/data-analysis/src/availability.py",
+		"/home/adamiaonr/workbench/icn-2017/code/scripts/plot-fp-analysis.py",
+		"/home/adamiaonr/workbench/rid-testapp/lib/libbloom/bloom.h",
+		"/home/adamiaonr/workbench/rid-testapp/lib/libbloom/bloom.c",
+		"/home/adamiaonr/workbench/rid-testapp/scripts/src/plot-stats.py",
 		"/home/adamiaonr/workbench/rid-testapp/test/f-min/entry.f03.tsv",
 		"/home/adamiaonr/workbench/rid-testapp/README.md",
 		"/home/adamiaonr/workbench/papers/rids/Makefile",
@@ -767,23 +759,7 @@
 		"/home/adamiaonr/Workbench/papers/rids/evaluation.tex",
 		"/home/adamiaonr/Workbench/papers/qualifier-2015/optimize.tex",
 		"/home/adamiaonr/Workbench/papers/hotnets-2015/optimize.tex",
-		"/home/adamiaonr/Workbench/papers/rids/fp-solutions.tex",
-		"/home/adamiaonr/Workbench/papers/rids/fp-analysis.tex",
-		"/home/adamiaonr/Workbench/papers/rids/design.tex",
-		"/home/adamiaonr/Workbench/papers/rids/problem.tex",
-		"/home/adamiaonr/Workbench/papers/rids/preamble.tex",
-		"/home/adamiaonr/Workbench/papers/rids/Makefile",
-		"/home/adamiaonr/Downloads/reddit",
-		"/home/adamiaonr/Workbench/papers/qualifier-2015/background.tex",
-		"/home/adamiaonr/Workbench/papers/qualifier-2015/semantics.tex",
-		"/home/adamiaonr/Workbench/papers/qualifier-2015/design.tex",
-		"/home/adamiaonr/Workbench/papers/hotnets-2015/problem.tex",
-		"/home/adamiaonr/Downloads/startbootstrap-freelancer-1.0.5/index.html",
-		"/home/adamiaonr/Downloads/startbootstrap-creative-1.0.2/css/creative.css",
-		"/home/adamiaonr/Downloads/startbootstrap-freelancer-1.0.5/css/freelancer.css",
-		"/home/adamiaonr/Workbench/papers/hotnets-2015/sig-alternate.cls",
-		"/home/adamiaonr/Workbench/papers/hotnets-2015/introduction.tex",
-		"/home/adamiaonr/Workbench/papers/qualifier-2015/conclusions.tex"
+		"/home/adamiaonr/Workbench/papers/rids/fp-solutions.tex"
 	],
 	"find":
 	{
@@ -803,6 +779,15 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"dejavusans",
+			"style",
+			"legend",
+			"loc",
+			"legend",
+			"font",
+			"tight_layout",
+			"diff_labels",
+			"interleave",
 			"cdf",
 			"font",
 			"FONTSIZE_LEGEND",
@@ -921,16 +906,7 @@
 			"fp_rate(",
 			"fp_rate",
 			"cumulative_joint_f",
-			"forward(",
-			"forward",
-			"L_",
-			"L_i",
-			"L_",
-			"lpm_pmf",
-			"iface_pmf",
-			"set_iface_pmf",
-			"get_log_fp_rates",
-			"__float128"
+			"forward("
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -1076,7 +1052,7 @@
 	"groups":
 	[
 		{
-			"selected": 7,
+			"selected": 1,
 			"sheets":
 			[
 				{
@@ -1107,288 +1083,191 @@
 				},
 				{
 					"buffer": 1,
-					"file": "src/rid_fwd.c",
+					"file": "scripts/src/plot-stats.py",
 					"settings":
 					{
-						"buffer_size": 24502,
+						"buffer_size": 7600,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								19608,
-								19608
+								6290,
+								6290
 							]
 						],
 						"settings":
 						{
-							"rulers":
-							[
-								80
-							],
-							"spell_check": true,
-							"syntax": "Packages/C++/C.tmLanguage",
+							"syntax": "Packages/Python/Python.tmLanguage",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 8051.0,
+						"translation.y": 1992.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 2,
-					"file": "src/lookup_stats.c",
+					"file": "scripts/src/plot-fp-analysis.py",
 					"settings":
 					{
-						"buffer_size": 4431,
+						"buffer_size": 9353,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								194,
-								194
+								3273,
+								3273
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C.tmLanguage",
+							"syntax": "Packages/Python/Python.tmLanguage",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 2112.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 3,
-					"file": "src/pt.c",
+					"file": "/home/adamiaonr/workbench/wifi-vehicles/data-analysis/src/trace-analysis.py",
 					"settings":
 					{
-						"buffer_size": 31199,
+						"buffer_size": 59629,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								26468,
-								26468
+								0,
+								0
 							]
 						],
 						"settings":
 						{
-							"rulers":
-							[
-								80
-							],
-							"syntax": "Packages/C++/C.tmLanguage",
+							"syntax": "Packages/Python/Python.tmLanguage",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
-						"translation.x": 0.0,
-						"translation.y": 12203.0,
+						"translation.x": 56.0,
+						"translation.y": 11787.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 4,
-					"file": "include/pt.h",
+					"file": "/home/adamiaonr/workbench/rid-analytics/scripts/graphs/opportunistic.py",
 					"settings":
 					{
-						"buffer_size": 3271,
+						"buffer_size": 7760,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2766,
-								2766
+								7086,
+								7086
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C++.tmLanguage",
+							"syntax": "Packages/Python/Python.tmLanguage",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 966.0,
+						"translation.y": 2412.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 5,
-					"file": "include/rid_utils.h",
+					"file": "/home/adamiaonr/workbench/rid-analytics/scripts/graphs/event_breakdown.py",
 					"settings":
 					{
-						"buffer_size": 2357,
+						"buffer_size": 6521,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1578,
-								1578
+								5457,
+								5457
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C++.tmLanguage"
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 270.0,
+						"translation.y": 1737.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 6,
-					"file": "src/rid_utils.c",
+					"file": "/home/adamiaonr/workbench/rid-analytics/scripts/graphs/cdn.py",
 					"settings":
 					{
-						"buffer_size": 7802,
+						"buffer_size": 50323,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								6245,
-								6245
+								0,
+								0
 							]
 						],
 						"settings":
 						{
-							"rulers":
-							[
-								80
-							],
-							"syntax": "Packages/C++/C.tmLanguage",
+							"syntax": "Packages/Python/Python.tmLanguage",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 11967.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 7,
-					"file": "scripts/plot-stats.py",
+					"file": "test/entry.f01.tsv",
 					"settings":
 					{
-						"buffer_size": 6776,
+						"buffer_size": 205,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								6165,
-								6165
+								0,
+								0
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Python/Python.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 2262.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 8,
-					"file": "/home/adamiaonr/workbench/wifi-vehicles/data-analysis/src/availability.py",
-					"settings":
-					{
-						"buffer_size": 19582,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								12800,
-								12800
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 4212.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 9,
-					"file": "/home/adamiaonr/workbench/icn-2017/code/scripts/plot-fp-analysis.py",
-					"settings":
-					{
-						"buffer_size": 8563,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								7190,
-								7190
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 1755.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 10,
-					"file": "lib/libbloom/bloom.h",
-					"settings":
-					{
-						"buffer_size": 3847,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								183,
-								183
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/C++/C++.tmLanguage",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -1397,29 +1276,27 @@
 					"type": "text"
 				},
 				{
-					"buffer": 11,
-					"file": "lib/libbloom/bloom.c",
+					"buffer": 8,
+					"file": "test/tp-size.f01.tsv",
 					"settings":
 					{
-						"buffer_size": 4788,
+						"buffer_size": 112,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2415,
-								2415
+								0,
+								0
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C.tmLanguage",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/Text/Plain text.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 322.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -1619,6 +1496,6 @@
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 348.0,
+	"side_bar_width": 131.0,
 	"status_bar_visible": true
 }
